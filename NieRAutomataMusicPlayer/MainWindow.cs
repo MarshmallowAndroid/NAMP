@@ -32,26 +32,27 @@ namespace NieRAutomataMusicTest
         {
             InitializeComponent();
 
-            Environment.CurrentDirectory = @"F:\NieRAutomata Modding\NME2-0.5-alpha-x64\x64\separated\pascal's village";
+            string songName = "the sound of the end";
+            Environment.CurrentDirectory = @"F:\NieRAutomata Modding\NME2-0.5-alpha-x64\x64\separated\" + songName;
         }
 
         private void Button1_Click(object sender, EventArgs e)
         {
             OutputDevice?.Stop();
-            VorbisFile1 = new VorbisWaveReader(@"BGM_0_004_[9].ogg");
-            VorbisFile2 = new VorbisWaveReader(@"BGM_0_004_[10].ogg");
-            //VorbisFile3 = new VorbisWaveReader(@"BGM_0_003_[8].ogg");
+            VorbisFile1 = new VorbisWaveReader(@"BGM_2_000_[13].ogg");
+            VorbisFile2 = new VorbisWaveReader(@"BGM_0_004_[1].ogg");
+            VorbisFile3 = new VorbisWaveReader(@"BGM_2_000_[16].ogg");
 
-            int loopStart = 1460865;
-            int loopEnd = 6970413;
+            int loopStart = 1276101;
+            int loopEnd = 7479221;
 
             TestStream1 = new BetterCustomLooper(VorbisFile1, loopStart, loopEnd);
             TestStream2 = new BetterCustomLooper(VorbisFile2, loopStart, loopEnd);
-            //testStream3 = new BetterCustomLooper(VorbisFile3, loopStart, loopEnd);
+            TestStream3 = new BetterCustomLooper(VorbisFile3, loopStart, loopEnd);
 
             VolumeSampleProvider1 = new VolumeSampleProvider(TestStream1.ToSampleProvider());
             VolumeSampleProvider2 = new VolumeSampleProvider(TestStream2.ToSampleProvider());
-            //VolumeSampleProvider3 = new VolumeSampleProvider(TestStream3.ToSampleProvider());
+            VolumeSampleProvider3 = new VolumeSampleProvider(TestStream3.ToSampleProvider());
 
             MixingSampleProvider = new MixingSampleProvider(TestStream1.WaveFormat);
 
@@ -59,19 +60,18 @@ namespace NieRAutomataMusicTest
             {
                 MixingSampleProvider.RemoveAllMixerInputs();
             }
+
             MixingSampleProvider.AddMixerInput(VolumeSampleProvider1);
             MixingSampleProvider.AddMixerInput(VolumeSampleProvider2);
-            //MixingSampleProvider.AddMixerInput(TestStream3);
+            MixingSampleProvider.AddMixerInput(VolumeSampleProvider3);
 
             VolumeSampleProvider1.Volume = 1.0f;
             VolumeSampleProvider2.Volume = 0.0f;
-            //VolumeSampleProvider3.Volume = 0.0f;
+            VolumeSampleProvider3.Volume = 0.0f;
 
             OutputDevice.Init(MixingSampleProvider);
 
             timer1.Enabled = true;
-
-            //VorbisFile.Position = 1481735 * VorbisFile.BlockAlign;
 
             OutputDevice.Play();
         }
@@ -103,39 +103,30 @@ namespace NieRAutomataMusicTest
 
         private void CheckBox1_CheckedChanged(object sender, EventArgs e)
         {
-            //if (checkBox1.Checked)
-            //{
-            //    MixingSampleProvider.RemoveMixerInput(MixingSampleProvider.MixerInputs.ElementAt(lastMixer));
-            //    MixingSampleProvider.AddMixerInput(TestStream2);
-            //    TestStream2.Position = TestStream1.Position;
-            //    //lastMixer++;
-            //}
-            //else
-            //{
-            //    MixingSampleProvider.RemoveMixerInput(MixingSampleProvider.MixerInputs.ElementAt(lastMixer));
-            //    MixingSampleProvider.AddMixerInput(TestStream1);
-            //    TestStream1.Position = TestStream2.Position;
-            //    //lastMixer--;
-            //}
+            float speed = 0.025f;
+
+            Timer timer = new Timer()
+            {
+                Interval = 33
+            };
+
+            VorbisFile2.Position = VorbisFile1.Position;
+
             if (checkBox1.Checked)
             {
                 VolumeSampleProvider1.Volume = 1.0f;
                 VolumeSampleProvider2.Volume = 0.0f;
 
-                Timer timer = new Timer()
-                {
-                    Interval = 33
-                };
-
                 timer.Tick += (sndr, evt) =>
                 {
-                    VolumeSampleProvider1.Volume -= 0.025f;
-                    VolumeSampleProvider2.Volume += 0.025f;
+                    VolumeSampleProvider1.Volume -= speed;
+                    VolumeSampleProvider2.Volume += speed;
 
                     if (VolumeSampleProvider1.Volume <= 0.0f)
                     {
-                        VolumeSampleProvider2.Volume = 1.0f;
                         VolumeSampleProvider1.Volume = 0.0f;
+                        VolumeSampleProvider2.Volume = 1.0f;
+
 
                         timer.Enabled = false;
                     }
@@ -145,18 +136,13 @@ namespace NieRAutomataMusicTest
             }
             else
             {
-                VolumeSampleProvider2.Volume = 1.0f;
                 VolumeSampleProvider1.Volume = 0.0f;
-
-                Timer timer = new Timer()
-                {
-                    Interval = 33
-                };
+                VolumeSampleProvider2.Volume = 1.0f;
 
                 timer.Tick += (sndr, evt) =>
                 {
-                    VolumeSampleProvider2.Volume -= 0.025f;
-                    VolumeSampleProvider1.Volume += 0.025f;
+                    VolumeSampleProvider2.Volume -= speed;
+                    VolumeSampleProvider1.Volume += speed;
 
                     if (VolumeSampleProvider2.Volume <= 0.0f)
                     {
@@ -173,6 +159,52 @@ namespace NieRAutomataMusicTest
 
         private void CheckBox2_CheckedChanged(object sender, EventArgs e)
         {
+            float speed = 0.025f;
+
+            Timer timer = new Timer()
+            {
+                Interval = 33
+            };
+
+            VorbisFile3.Position = VorbisFile1.Position;
+
+            if (checkBox2.Checked)
+            {
+                VolumeSampleProvider3.Volume = 0.0f;
+
+                timer.Tick += (sndr, evt) =>
+                {
+                    VolumeSampleProvider3.Volume += speed;
+                    Console.WriteLine(VolumeSampleProvider3.Volume);
+
+                    if (VolumeSampleProvider3.Volume >= 1.0f)
+                    {
+                        VolumeSampleProvider3.Volume = 1.0f;
+
+                        timer.Enabled = false;
+                    }
+                };
+
+                timer.Enabled = true;
+            }
+            else
+            {
+                VolumeSampleProvider3.Volume = 1.0f;
+
+                timer.Tick += (sndr, evt) =>
+                {
+                    VolumeSampleProvider3.Volume -= speed;
+
+                    if (VolumeSampleProvider3.Volume <= 0.0f)
+                    {
+                        VolumeSampleProvider3.Volume = 0.0f;
+
+                        timer.Enabled = false;
+                    }
+                };
+
+                timer.Enabled = true;
+            }
         }
 
         private void Button2_Click(object sender, EventArgs e)
@@ -184,17 +216,59 @@ namespace NieRAutomataMusicTest
         }
     }
 
+    public class CachedMusic
+    {
+        public float[] SoundData { get; private set; }
+        public WaveFormat WaveFormat { get; private set; }
+
+        public CachedMusic(string filename)
+        {
+            using (var vorbisWaveReader = new VorbisWaveReader(filename))
+            {
+                WaveFormat = vorbisWaveReader.WaveFormat;
+
+                var whole = new List<float>((int)(vorbisWaveReader.Length / 4));
+                var buffer = new float[vorbisWaveReader.WaveFormat.SampleRate * vorbisWaveReader.WaveFormat.Channels];
+
+                int samplesRead;
+
+                while ((samplesRead = vorbisWaveReader.Read(buffer, 0, buffer.Length)) > 0)
+                {
+                    whole.AddRange(buffer.Take(samplesRead));
+                }
+
+                SoundData = whole.ToArray();
+            }
+        }
+    }
+
+    public class CachedMusicSampleProvider : ISampleProvider
+    {
+        private readonly CachedMusic cachedMusic;
+        private long position;
+
+        public WaveFormat WaveFormat => throw new NotImplementedException();
+
+        public int Read(float[] buffer, int offset, int count)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    // Loops through specified samples
     public class BetterCustomLooper : WaveStream
     {
         private WaveStream waveStream;
-        private int loopStart;
-        private int loopEnd;
+        private readonly int loopStart;
+        private readonly int loopEnd;
 
         public BetterCustomLooper(WaveStream source, int loopStart, int loopEnd)
         {
             waveStream = source;
-            this.loopStart = loopStart * waveStream.BlockAlign;
-            this.loopEnd = loopEnd * waveStream.BlockAlign;
+
+            // Convert samples to bytes
+            this.loopStart = loopStart * (waveStream.WaveFormat.BitsPerSample / 4);
+            this.loopEnd = loopEnd * (waveStream.WaveFormat.BitsPerSample / 4);
 
             WaveFormat = waveStream.WaveFormat;
             Length = source.Length;
@@ -206,26 +280,24 @@ namespace NieRAutomataMusicTest
 
         public override long Position { get => waveStream.Position; set => waveStream.Position = value; }
 
-        int previous;
-
         public override int Read(byte[] buffer, int offset, int count)
         {
+            long remainder = loopEnd - Position; // Remaining bytes before looping
 
-            int remainder = (int)Position - loopEnd;
-
-            if (Position >= loopEnd)
+            if (remainder < 0) // For some reason, remainder is negative when about to reach the loop end
             {
-                Position = loopStart;
+                Position = loopStart; // Loop
 
-                waveStream.Read(buffer, offset, remainder);
+                waveStream.Read(buffer, offset, (int)Math.Abs(remainder)); // Read the remaining bytes
             }
 
-            int bytesRead = waveStream.Read(buffer, offset, count);
-            previous = bytesRead;
+            int bytesRead = waveStream.Read(buffer, offset, count); // Normal read
 
             return bytesRead;
         }
 
+        // Backup lol
+        //
         //public override int Read(byte[] buffer, int offset, int count)
         //{
         //    int bytesRead = 0;

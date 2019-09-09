@@ -1,5 +1,5 @@
 # NieR:Automata™ Music Player Experiment
-A very hacky and probably unoptimized player built with NAudio for BGM extracted from NieR:Automata™.
+A very hacky and probably unoptimized player built with [NAudio](https://github.com/naudio/NAudio) for BGM extracted from NieR:Automata™.
 
 Plays and loops different streams together (vocals, instruments, and 8-bit versions).
 
