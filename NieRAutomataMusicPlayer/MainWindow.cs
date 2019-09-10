@@ -20,9 +20,9 @@ namespace NieRAutomataMusicTest
         VorbisWaveReader VorbisFile1;
         VorbisWaveReader VorbisFile2;
         VorbisWaveReader VorbisFile3;
-        BetterCustomLooper TestStream1;
-        BetterCustomLooper TestStream2;
-        BetterCustomLooper TestStream3;
+        LoopStream TestStream1;
+        LoopStream TestStream2;
+        LoopStream TestStream3;
         VolumeSampleProvider VolumeSampleProvider1;
         VolumeSampleProvider VolumeSampleProvider2;
         VolumeSampleProvider VolumeSampleProvider3;
@@ -46,9 +46,9 @@ namespace NieRAutomataMusicTest
             int loopStart = 1276101;
             int loopEnd = 7479221;
 
-            TestStream1 = new BetterCustomLooper(VorbisFile1, loopStart, loopEnd);
-            TestStream2 = new BetterCustomLooper(VorbisFile2, loopStart, loopEnd);
-            TestStream3 = new BetterCustomLooper(VorbisFile3, loopStart, loopEnd);
+            TestStream1 = new LoopStream(VorbisFile1, loopStart, loopEnd);
+            TestStream2 = new LoopStream(VorbisFile2, loopStart, loopEnd);
+            TestStream3 = new LoopStream(VorbisFile3, loopStart, loopEnd);
 
             VolumeSampleProvider1 = new VolumeSampleProvider(TestStream1.ToSampleProvider());
             VolumeSampleProvider2 = new VolumeSampleProvider(TestStream2.ToSampleProvider());
@@ -214,6 +214,12 @@ namespace NieRAutomataMusicTest
             else
                 OutputDevice.Pause();
         }
+
+        private void MainWindow_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            OutputDevice?.Stop();
+            OutputDevice?.Dispose();
+        }
     }
 
     public class CachedMusic
@@ -253,67 +259,5 @@ namespace NieRAutomataMusicTest
         {
             throw new NotImplementedException();
         }
-    }
-
-    // Loops through specified samples
-    public class BetterCustomLooper : WaveStream
-    {
-        private WaveStream waveStream;
-        private readonly int loopStart;
-        private readonly int loopEnd;
-
-        public BetterCustomLooper(WaveStream source, int loopStart, int loopEnd)
-        {
-            waveStream = source;
-
-            // Convert samples to bytes
-            this.loopStart = loopStart * (waveStream.WaveFormat.BitsPerSample / 4);
-            this.loopEnd = loopEnd * (waveStream.WaveFormat.BitsPerSample / 4);
-
-            WaveFormat = waveStream.WaveFormat;
-            Length = source.Length;
-        }
-
-        public override WaveFormat WaveFormat { get; }
-
-        public override long Length { get; }
-
-        public override long Position { get => waveStream.Position; set => waveStream.Position = value; }
-
-        public override int Read(byte[] buffer, int offset, int count)
-        {
-            long remainder = loopEnd - Position; // Remaining bytes before looping
-
-            if (remainder < 0) // For some reason, remainder is negative when about to reach the loop end
-            {
-                Position = loopStart; // Loop
-
-                waveStream.Read(buffer, offset, (int)Math.Abs(remainder)); // Read the remaining bytes
-            }
-
-            int bytesRead = waveStream.Read(buffer, offset, count); // Normal read
-
-            return bytesRead;
-        }
-
-        // Backup lol
-        //
-        //public override int Read(byte[] buffer, int offset, int count)
-        //{
-        //    int bytesRead = 0;
-
-        //    int remainder = (int)Position - loopEnd;
-
-        //    if (Position >= loopEnd)
-        //    {
-        //        Position = loopStart;
-
-        //        waveStream.Read(buffer, offset, remainder);
-        //    }
-
-        //    bytesRead = waveStream.Read(buffer, offset, count);
-
-        //    return bytesRead;
-        //}
     }
 }
