@@ -29,106 +29,115 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            this.textBox1 = new System.Windows.Forms.TextBox();
-            this.button1 = new System.Windows.Forms.Button();
-            this.trackBar1 = new System.Windows.Forms.TrackBar();
-            this.timer1 = new System.Windows.Forms.Timer(this.components);
-            this.checkBox1 = new System.Windows.Forms.CheckBox();
-            this.checkBox2 = new System.Windows.Forms.CheckBox();
-            this.button2 = new System.Windows.Forms.Button();
-            this.label1 = new System.Windows.Forms.Label();
-            ((System.ComponentModel.ISupportInitialize)(this.trackBar1)).BeginInit();
+            this.musicPath = new System.Windows.Forms.TextBox();
+            this.playPosition = new System.Windows.Forms.TrackBar();
+            this.PositionUpdate = new System.Windows.Forms.Timer(this.components);
+            this.pauseButton = new System.Windows.Forms.Button();
+            this.songList = new System.Windows.Forms.ListBox();
+            this.trackList = new System.Windows.Forms.ListView();
+            this.keyColumn = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.valueColumn = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.mainTracks = new System.Windows.Forms.FlowLayoutPanel();
+            this.overlayTracks = new System.Windows.Forms.FlowLayoutPanel();
+            ((System.ComponentModel.ISupportInitialize)(this.playPosition)).BeginInit();
             this.SuspendLayout();
             // 
-            // textBox1
+            // musicPath
             // 
-            this.textBox1.Location = new System.Drawing.Point(116, 50);
-            this.textBox1.Name = "textBox1";
-            this.textBox1.Size = new System.Drawing.Size(366, 20);
-            this.textBox1.TabIndex = 0;
-            this.textBox1.Text = "F:\\NieRAutomata Modding\\NME2-0.5-alpha-x64\\x64\\separated";
+            this.musicPath.Location = new System.Drawing.Point(12, 12);
+            this.musicPath.Name = "musicPath";
+            this.musicPath.Size = new System.Drawing.Size(366, 20);
+            this.musicPath.TabIndex = 0;
+            this.musicPath.Text = "F:\\NieRAutomata Modding\\NME2-0.5-alpha-x64\\x64\\separated";
             // 
-            // button1
+            // playPosition
             // 
-            this.button1.Location = new System.Drawing.Point(324, 300);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(75, 23);
-            this.button1.TabIndex = 1;
-            this.button1.Text = "Play";
-            this.button1.UseVisualStyleBackColor = true;
-            this.button1.Click += new System.EventHandler(this.Button1_Click);
+            this.playPosition.Location = new System.Drawing.Point(12, 446);
+            this.playPosition.Maximum = 1000;
+            this.playPosition.Name = "playPosition";
+            this.playPosition.Size = new System.Drawing.Size(693, 45);
+            this.playPosition.TabIndex = 2;
+            this.playPosition.TickFrequency = 0;
+            this.playPosition.Scroll += new System.EventHandler(this.PlayPosition_Scroll);
             // 
-            // trackBar1
+            // PositionUpdate
             // 
-            this.trackBar1.Location = new System.Drawing.Point(45, 194);
-            this.trackBar1.Maximum = 1000;
-            this.trackBar1.Name = "trackBar1";
-            this.trackBar1.Size = new System.Drawing.Size(683, 45);
-            this.trackBar1.TabIndex = 2;
-            this.trackBar1.TickFrequency = 0;
-            this.trackBar1.Scroll += new System.EventHandler(this.TrackBar1_Scroll);
+            this.PositionUpdate.Tick += new System.EventHandler(this.PositionUpdate_Tick);
             // 
-            // timer1
+            // pauseButton
             // 
-            this.timer1.Tick += new System.EventHandler(this.Timer1_Tick);
+            this.pauseButton.Location = new System.Drawing.Point(321, 542);
+            this.pauseButton.Name = "pauseButton";
+            this.pauseButton.Size = new System.Drawing.Size(75, 23);
+            this.pauseButton.TabIndex = 5;
+            this.pauseButton.Text = "Pause";
+            this.pauseButton.UseVisualStyleBackColor = true;
+            this.pauseButton.Click += new System.EventHandler(this.PauseButton_Click);
             // 
-            // checkBox1
+            // songList
             // 
-            this.checkBox1.AutoSize = true;
-            this.checkBox1.Location = new System.Drawing.Point(324, 98);
-            this.checkBox1.Name = "checkBox1";
-            this.checkBox1.Size = new System.Drawing.Size(63, 17);
-            this.checkBox1.TabIndex = 3;
-            this.checkBox1.Text = "stream2";
-            this.checkBox1.UseVisualStyleBackColor = true;
-            this.checkBox1.CheckedChanged += new System.EventHandler(this.CheckBox1_CheckedChanged);
+            this.songList.FormattingEnabled = true;
+            this.songList.Location = new System.Drawing.Point(12, 91);
+            this.songList.Name = "songList";
+            this.songList.Size = new System.Drawing.Size(251, 147);
+            this.songList.TabIndex = 6;
+            this.songList.SelectedIndexChanged += new System.EventHandler(this.SongList_SelectedIndexChanged);
             // 
-            // checkBox2
+            // trackList
             // 
-            this.checkBox2.AutoSize = true;
-            this.checkBox2.Location = new System.Drawing.Point(324, 121);
-            this.checkBox2.Name = "checkBox2";
-            this.checkBox2.Size = new System.Drawing.Size(80, 17);
-            this.checkBox2.TabIndex = 4;
-            this.checkBox2.Text = "checkBox2";
-            this.checkBox2.UseVisualStyleBackColor = true;
-            this.checkBox2.CheckedChanged += new System.EventHandler(this.CheckBox2_CheckedChanged);
+            this.trackList.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
+            this.keyColumn,
+            this.valueColumn});
+            this.trackList.FullRowSelect = true;
+            this.trackList.HideSelection = false;
+            this.trackList.Location = new System.Drawing.Point(269, 91);
+            this.trackList.Name = "trackList";
+            this.trackList.Size = new System.Drawing.Size(251, 147);
+            this.trackList.TabIndex = 7;
+            this.trackList.UseCompatibleStateImageBehavior = false;
+            this.trackList.View = System.Windows.Forms.View.Details;
             // 
-            // button2
+            // keyColumn
             // 
-            this.button2.Location = new System.Drawing.Point(333, 367);
-            this.button2.Name = "button2";
-            this.button2.Size = new System.Drawing.Size(75, 23);
-            this.button2.TabIndex = 5;
-            this.button2.Text = "Pause";
-            this.button2.UseVisualStyleBackColor = true;
-            this.button2.Click += new System.EventHandler(this.Button2_Click);
+            this.keyColumn.Text = "TrackName";
+            this.keyColumn.Width = 68;
             // 
-            // label1
+            // valueColumn
             // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(646, 137);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(35, 13);
-            this.label1.TabIndex = 6;
-            this.label1.Text = "label1";
+            this.valueColumn.Text = "File";
+            this.valueColumn.Width = 179;
+            // 
+            // mainTracks
+            // 
+            this.mainTracks.Location = new System.Drawing.Point(12, 244);
+            this.mainTracks.Name = "mainTracks";
+            this.mainTracks.Size = new System.Drawing.Size(251, 147);
+            this.mainTracks.TabIndex = 8;
+            // 
+            // overlayTracks
+            // 
+            this.overlayTracks.Location = new System.Drawing.Point(269, 244);
+            this.overlayTracks.Name = "overlayTracks";
+            this.overlayTracks.Size = new System.Drawing.Size(251, 147);
+            this.overlayTracks.TabIndex = 8;
             // 
             // MainWindow
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(800, 450);
-            this.Controls.Add(this.label1);
-            this.Controls.Add(this.button2);
-            this.Controls.Add(this.checkBox2);
-            this.Controls.Add(this.checkBox1);
-            this.Controls.Add(this.trackBar1);
-            this.Controls.Add(this.button1);
-            this.Controls.Add(this.textBox1);
+            this.ClientSize = new System.Drawing.Size(717, 654);
+            this.Controls.Add(this.overlayTracks);
+            this.Controls.Add(this.mainTracks);
+            this.Controls.Add(this.trackList);
+            this.Controls.Add(this.songList);
+            this.Controls.Add(this.pauseButton);
+            this.Controls.Add(this.playPosition);
+            this.Controls.Add(this.musicPath);
             this.Name = "MainWindow";
-            this.Text = "Form1";
+            this.Text = "NieR:Automata Music Player";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainWindow_FormClosing);
-            ((System.ComponentModel.ISupportInitialize)(this.trackBar1)).EndInit();
+            this.Load += new System.EventHandler(this.MainWindow_Load);
+            ((System.ComponentModel.ISupportInitialize)(this.playPosition)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -136,14 +145,16 @@
 
         #endregion
 
-        private System.Windows.Forms.TextBox textBox1;
-        private System.Windows.Forms.Button button1;
-        private System.Windows.Forms.TrackBar trackBar1;
-        private System.Windows.Forms.Timer timer1;
-        private System.Windows.Forms.CheckBox checkBox1;
-        private System.Windows.Forms.CheckBox checkBox2;
-        private System.Windows.Forms.Button button2;
-        private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.TextBox musicPath;
+        private System.Windows.Forms.TrackBar playPosition;
+        private System.Windows.Forms.Timer PositionUpdate;
+        private System.Windows.Forms.Button pauseButton;
+        private System.Windows.Forms.ListBox songList;
+        private System.Windows.Forms.ListView trackList;
+        private System.Windows.Forms.ColumnHeader keyColumn;
+        private System.Windows.Forms.ColumnHeader valueColumn;
+        private System.Windows.Forms.FlowLayoutPanel mainTracks;
+        private System.Windows.Forms.FlowLayoutPanel overlayTracks;
     }
 }
 

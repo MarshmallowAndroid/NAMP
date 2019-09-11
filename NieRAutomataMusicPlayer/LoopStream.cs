@@ -9,9 +9,10 @@ namespace NieRAutomataMusicTest
 {
     public class LoopStream : WaveStream
     {
-        private WaveStream waveStream;
+        private readonly WaveStream waveStream;
         private readonly int loopStart;
         private readonly int loopEnd;
+
         public LoopStream(WaveStream source, int loopStart, int loopEnd)
         {
             waveStream = source;
@@ -23,9 +24,13 @@ namespace NieRAutomataMusicTest
             WaveFormat = waveStream.WaveFormat;
             Length = source.Length;
         }
+
         public override WaveFormat WaveFormat { get; }
+
         public override long Length { get; }
+
         public override long Position { get => waveStream.Position; set => waveStream.Position = value; }
+
         public override int Read(byte[] buffer, int offset, int count)
         {
             long remainder = loopEnd - Position; // Remaining bytes before looping
