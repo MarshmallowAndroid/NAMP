@@ -15,17 +15,21 @@ namespace NieRAutomataMusicTest
         public FileMapReader(string filename)
         {
             this.filename = filename;
+        }
+
+        private void Initialize()
+        {
             reader = new StreamReader(filename);
         }
 
-        private void Reinitialize()
+        private void Dispose()
         {
-            reader = new StreamReader(filename);
+            reader.Dispose();
         }
 
         public void GetMapping(string songName)
         {
-            Reinitialize();
+            Initialize();
 
             while (!reader.EndOfStream)
             {
@@ -41,11 +45,13 @@ namespace NieRAutomataMusicTest
                     }
                 }
             }
+
+            reader.Dispose();
         }
 
         public string GetValue(string songName, string key)
         {
-            Reinitialize();
+            Initialize();
 
             while (!reader.EndOfStream)
             {
@@ -55,15 +61,20 @@ namespace NieRAutomataMusicTest
                     {
                         string line = reader.ReadLine();
 
-                        if (!char.IsLetterOrDigit(line[0])) break;
-
-                        if (key == line.Substring(0, line.IndexOf('=')).Trim())
+                        if (line.Length > 0)
                         {
-                            return line.Substring(line.IndexOf('=') + 1, line.Length - (line.IndexOf('=') + 1)).Trim();
+                            if (line.StartsWith("[") || !char.IsLetterOrDigit(line[0])) break;
+                            if (key == line.Substring(0, line.IndexOf('=')).Trim())
+                            {
+                                return line.Substring(line.IndexOf('=') + 1, line.Length - (line.IndexOf('=') + 1)).Trim();
+                            }
                         }
+
                     }
                 }
             }
+
+            reader.Dispose();
 
             return "";
         }
@@ -72,7 +83,7 @@ namespace NieRAutomataMusicTest
         {
             List<string> trackList = new List<string>();
 
-            Reinitialize();
+            Initialize();
 
             while (!reader.EndOfStream)
             {
@@ -82,15 +93,20 @@ namespace NieRAutomataMusicTest
                     {
                         string line = reader.ReadLine();
 
-                        if (!char.IsLetterOrDigit(line[0])) break;
-                        if (!line.StartsWith("loop"))
+                        if (line.Length > 0)
                         {
-                            string key = line.Substring(0, line.IndexOf('=')).Trim();
-                            trackList.Add(key);
+                            if (line.StartsWith("[") || !char.IsLetterOrDigit(line[0])) break;
+                            if (!line.StartsWith("loop"))
+                            {
+                                string key = line.Substring(0, line.IndexOf('=')).Trim();
+                                trackList.Add(key);
+                            }
                         }
                     }
                 }
             }
+
+            reader.Dispose();
 
             return trackList.ToArray();
         }
@@ -99,7 +115,7 @@ namespace NieRAutomataMusicTest
         {
             List<string> songList = new List<string>();
 
-            Reinitialize();
+            Initialize();
 
             while (!reader.EndOfStream)
             {
@@ -112,6 +128,8 @@ namespace NieRAutomataMusicTest
                     songList.Add(songName);
                 }
             }
+
+            reader.Dispose();
 
             return songList.ToArray();
         }

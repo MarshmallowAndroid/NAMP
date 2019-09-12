@@ -37,8 +37,10 @@
             this.trackList = new System.Windows.Forms.ListView();
             this.keyColumn = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.valueColumn = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-            this.mainTracks = new System.Windows.Forms.FlowLayoutPanel();
-            this.overlayTracks = new System.Windows.Forms.FlowLayoutPanel();
+            this.mainTracksPanel = new System.Windows.Forms.FlowLayoutPanel();
+            this.overlayTracksPanel = new System.Windows.Forms.FlowLayoutPanel();
+            this.playButton = new System.Windows.Forms.Button();
+            this.progressBar1 = new System.Windows.Forms.ProgressBar();
             ((System.ComponentModel.ISupportInitialize)(this.playPosition)).BeginInit();
             this.SuspendLayout();
             // 
@@ -46,16 +48,16 @@
             // 
             this.musicPath.Location = new System.Drawing.Point(12, 12);
             this.musicPath.Name = "musicPath";
-            this.musicPath.Size = new System.Drawing.Size(366, 20);
+            this.musicPath.Size = new System.Drawing.Size(627, 20);
             this.musicPath.TabIndex = 0;
             this.musicPath.Text = "F:\\NieRAutomata Modding\\NME2-0.5-alpha-x64\\x64\\separated";
             // 
             // playPosition
             // 
-            this.playPosition.Location = new System.Drawing.Point(12, 446);
+            this.playPosition.Location = new System.Drawing.Point(12, 453);
             this.playPosition.Maximum = 1000;
             this.playPosition.Name = "playPosition";
-            this.playPosition.Size = new System.Drawing.Size(693, 45);
+            this.playPosition.Size = new System.Drawing.Size(627, 45);
             this.playPosition.TabIndex = 2;
             this.playPosition.TickFrequency = 0;
             this.playPosition.Scroll += new System.EventHandler(this.PlayPosition_Scroll);
@@ -66,7 +68,7 @@
             // 
             // pauseButton
             // 
-            this.pauseButton.Location = new System.Drawing.Point(321, 542);
+            this.pauseButton.Location = new System.Drawing.Point(288, 517);
             this.pauseButton.Name = "pauseButton";
             this.pauseButton.Size = new System.Drawing.Size(75, 23);
             this.pauseButton.TabIndex = 5;
@@ -107,33 +109,59 @@
             this.valueColumn.Text = "File";
             this.valueColumn.Width = 179;
             // 
-            // mainTracks
+            // mainTracksPanel
             // 
-            this.mainTracks.Location = new System.Drawing.Point(12, 244);
-            this.mainTracks.Name = "mainTracks";
-            this.mainTracks.Size = new System.Drawing.Size(251, 147);
-            this.mainTracks.TabIndex = 8;
+            this.mainTracksPanel.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.mainTracksPanel.Location = new System.Drawing.Point(12, 244);
+            this.mainTracksPanel.Name = "mainTracksPanel";
+            this.mainTracksPanel.Size = new System.Drawing.Size(251, 147);
+            this.mainTracksPanel.TabIndex = 8;
             // 
-            // overlayTracks
+            // overlayTracksPanel
             // 
-            this.overlayTracks.Location = new System.Drawing.Point(269, 244);
-            this.overlayTracks.Name = "overlayTracks";
-            this.overlayTracks.Size = new System.Drawing.Size(251, 147);
-            this.overlayTracks.TabIndex = 8;
+            this.overlayTracksPanel.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.overlayTracksPanel.Location = new System.Drawing.Point(269, 244);
+            this.overlayTracksPanel.Name = "overlayTracksPanel";
+            this.overlayTracksPanel.Size = new System.Drawing.Size(251, 147);
+            this.overlayTracksPanel.TabIndex = 8;
+            // 
+            // playButton
+            // 
+            this.playButton.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.playButton.Location = new System.Drawing.Point(526, 91);
+            this.playButton.Name = "playButton";
+            this.playButton.Size = new System.Drawing.Size(113, 102);
+            this.playButton.TabIndex = 5;
+            this.playButton.Text = "Play";
+            this.playButton.UseVisualStyleBackColor = true;
+            this.playButton.Click += new System.EventHandler(this.PlayButton_Click);
+            // 
+            // progressBar1
+            // 
+            this.progressBar1.Location = new System.Drawing.Point(13, 398);
+            this.progressBar1.Name = "progressBar1";
+            this.progressBar1.Size = new System.Drawing.Size(250, 23);
+            this.progressBar1.TabIndex = 9;
+            this.progressBar1.Visible = false;
             // 
             // MainWindow
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(717, 654);
-            this.Controls.Add(this.overlayTracks);
-            this.Controls.Add(this.mainTracks);
+            this.ClientSize = new System.Drawing.Size(651, 584);
+            this.Controls.Add(this.progressBar1);
+            this.Controls.Add(this.overlayTracksPanel);
+            this.Controls.Add(this.mainTracksPanel);
             this.Controls.Add(this.trackList);
             this.Controls.Add(this.songList);
+            this.Controls.Add(this.playButton);
             this.Controls.Add(this.pauseButton);
             this.Controls.Add(this.playPosition);
             this.Controls.Add(this.musicPath);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
+            this.MaximizeBox = false;
             this.Name = "MainWindow";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "NieR:Automata Music Player";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainWindow_FormClosing);
             this.Load += new System.EventHandler(this.MainWindow_Load);
@@ -153,8 +181,10 @@
         private System.Windows.Forms.ListView trackList;
         private System.Windows.Forms.ColumnHeader keyColumn;
         private System.Windows.Forms.ColumnHeader valueColumn;
-        private System.Windows.Forms.FlowLayoutPanel mainTracks;
-        private System.Windows.Forms.FlowLayoutPanel overlayTracks;
+        private System.Windows.Forms.FlowLayoutPanel mainTracksPanel;
+        private System.Windows.Forms.FlowLayoutPanel overlayTracksPanel;
+        private System.Windows.Forms.Button playButton;
+        private System.Windows.Forms.ProgressBar progressBar1;
     }
 }
 

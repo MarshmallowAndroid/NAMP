@@ -47,13 +47,16 @@ namespace NieRAutomataMusicTest
 
         private void PositionUpdate_Tick(object sender, EventArgs e)
         {
-            VorbisWaveReader vorbisWaveReader = VorbisWaveReaders.First();
-            playPosition.Value = (int)((double)playPosition.Maximum * (vorbisWaveReader.CurrentTime.TotalSeconds / vorbisWaveReader.TotalTime.TotalSeconds));
+            if (VorbisWaveReaders.Count > 0)
+            {
+                VorbisWaveReader vorbisWaveReader = VorbisWaveReaders.First();
+                playPosition.Value = (int)((double)playPosition.Maximum * (vorbisWaveReader.CurrentTime.TotalSeconds / vorbisWaveReader.TotalTime.TotalSeconds));
+            }
         }
 
         private void PlayPosition_Scroll(object sender, EventArgs e)
         {
-            if (VorbisWaveReaders.Count > 0)
+            if (VorbisWaveReaders?.Count > 0)
             {
                 double newTime = VorbisWaveReaders.First().TotalTime.TotalSeconds * (playPosition.Value / (double)playPosition.Maximum);
 
@@ -70,12 +73,38 @@ namespace NieRAutomataMusicTest
             }
         }
 
+        private void PlayButton_Click(object sender, EventArgs e)
+        {
+            string selectedSong = songList.SelectedItem?.ToString();
+
+            OutputDevice?.Stop();
+            OutputDevice?.Dispose();
+
+            //((RadioButton)mainTracksPanel.Controls[0]).Checked = true;
+
+            SetupPlayer(selectedSong);
+
+            if (MixingSampleProvider != null)
+            {
+                OutputDevice.Init(MixingSampleProvider);
+                OutputDevice.Play();
+            }
+        }
+
         private void PauseButton_Click(object sender, EventArgs e)
         {
+            OutputDevice?.Stop();
+
             if (OutputDevice.PlaybackState == PlaybackState.Paused)
+            {
+                pauseButton.Text = "Pause";
                 OutputDevice.Resume();
+            }
             else
+            {
+                pauseButton.Text = "Resume";
                 OutputDevice.Pause();
+            }
         }
 
         private void SongList_SelectedIndexChanged(object sender, EventArgs e)
@@ -100,25 +129,59 @@ namespace NieRAutomataMusicTest
                 string[] trackNames = Reader.GetAvailableTracks(selectedSong);
 
                 trackList.Items.Clear();
-                mainTracks.Controls.Clear();
+                mainTracksPanel.Controls.Clear();
+                overlayTracksPanel.Controls.Clear();
 
                 foreach (var trackName in trackNames)
                 {
-                    string trackFile = Reader.GetValue(selectedSong, trackName);
-                    trackList.Items.Add(new ListViewItem(new[] { trackName, trackFile }));
-
-                    RadioButton trackRadioButton = new RadioButton()
+                    if (trackName.StartsWith("ins"))
                     {
-                        Text = trackName,
-                    };
-                    trackRadioButton.CheckedChanged += TrackRadioButton_CheckedChanged;
+                        string trackFile = Reader.GetValue(selectedSong, trackName);
+                        trackList.Items.Add(new ListViewItem(new[] { trackName, trackFile }));
 
-                    mainTracks.Controls.Add(trackRadioButton);
+                        string friendlyTrackName = "";
+
+                        if (trackName.Contains("voc"))
+                            friendlyTrackName = "With vocals";
+                        else if (trackName.Contains("qui"))
+                            friendlyTrackName = "Quiet";
+                        else if (trackName.Contains("nml"))
+                            friendlyTrackName = "Normal";
+                        else if (trackName.Contains("med"))
+                            friendlyTrackName = "Medium";
+                        else if (trackName.Contains("dyn"))
+                            friendlyTrackName = "Dynamic";
+                        else if (trackName.Contains("8bt"))
+                            friendlyTrackName = "8-bit";
+
+                        RadioButton trackRadioButton = new RadioButton()
+                        {
+                            Text = friendlyTrackName,
+                            Name = trackName
+                        };
+                        trackRadioButton.CheckedChanged += TrackRadioButton_CheckedChanged;
+
+                        mainTracksPanel.Controls.Add(trackRadioButton);
+                    }
+                    else
+                    {
+                        string trackFile = Reader.GetValue(selectedSong, trackName);
+                        trackList.Items.Add(new ListViewItem(new[] { trackName, trackFile }));
+
+                        CheckBox separatedVocalsCheckBox = new CheckBox()
+                        {
+                            Text = "Vocals",
+                            Name = trackName
+                        };
+                        separatedVocalsCheckBox.CheckedChanged += SeparatedVocalsCheckBox_CheckedChanged;
+
+                        overlayTracksPanel.Controls.Add(separatedVocalsCheckBox);
+                    }
                 }
 
-                SetupPlayer(selectedSong);
+                ((RadioButton)mainTracksPanel.Controls[0]).Checked = true;
 
-                ((RadioButton)mainTracks.Controls[0]).Checked = true;
+                SetupPlayer(selectedSong);
 
                 trackList.Sorting = SortOrder.Ascending;
                 trackList.Sort();
@@ -157,27 +220,29 @@ namespace NieRAutomataMusicTest
                 MixingSampleProvider.AddMixerInput(VolumeSampleProviders.Last().Value);
             }
 
-            RadioButton firstTrack = (RadioButton)mainTracks.Controls[0];
+            RadioButton initialTrack = null;
+
+            foreach (RadioButton control in mainTracksPanel.Controls)
+            {
+                if (control.Checked)
+                    initialTrack = control;
+            }
+
             foreach (var vsp in VolumeSampleProviders)
             {
-                if (vsp.Key != firstTrack.Text)
-                {
-                    vsp.Value.Volume = 0.0f;
-                }
-                else
+                if (vsp.Key == initialTrack.Name)
                     vsp.Value.Volume = 1.0f;
+                else
+                    vsp.Value.Volume = 0.0f;
             }
 
             PositionUpdate.Enabled = true;
-
-            OutputDevice.Init(MixingSampleProvider);
-            OutputDevice.Play();
         }
 
-        private void TrackRadioButton_CheckedChanged(object sender, EventArgs e)
+        private void SeparatedVocalsCheckBox_CheckedChanged(object sender, EventArgs e)
         {
-            RadioButton radioButton = (RadioButton)sender;
-            string selectedTrack = radioButton.Text;
+            CheckBox checkBox = (CheckBox)sender;
+            string selectedTrack = checkBox.Name;
 
             float speed = 0.025f;
 
@@ -186,38 +251,109 @@ namespace NieRAutomataMusicTest
                 Interval = 33
             };
 
-            VolumeSampleProvider fadeIn = null;
-            VolumeSampleProvider fadeOut = null;
+            VolumeSampleProvider fade = null;
 
             foreach (var item in VolumeSampleProviders)
             {
                 var vsp = item.Value;
 
                 if (item.Key == selectedTrack)
-                    fadeIn = vsp;
-
-                if (vsp.Volume == 1.0f)
-                    fadeOut = vsp;
+                    fade = vsp;
             }
 
-            fadeIn.Volume = 0.0f;
-            fadeOut.Volume = 1.0f;
-
-            timer.Tick += (sndr, evt) =>
+            if (!checkBox.Checked)
             {
-                fadeOut.Volume -= speed;
-                fadeIn.Volume += speed;
+                fade.Volume = 1.0f;
 
-                if (fadeOut.Volume <= 0.0f)
+                timer.Tick += (sndr, evt) =>
                 {
-                    fadeIn.Volume = 1.0f;
-                    fadeOut.Volume = 0.0f;
+                    fade.Volume -= speed;
 
-                    timer.Enabled = false;
-                }
-            };
+                    if (fade.Volume <= 0.0f)
+                    {
+                        fade.Volume = 0.0f;
+
+                        timer.Enabled = false;
+                    }
+                };
+            }
+            else
+            {
+                fade.Volume = 0.0f;
+
+                timer.Tick += (sndr, evt) =>
+                {
+                    fade.Volume += speed;
+
+                    if (fade.Volume >= 1.0f)
+                    {
+                        fade.Volume = 1.0f;
+
+                        timer.Enabled = false;
+                    }
+                };
+            }
 
             timer.Enabled = true;
+        }
+
+        private void TrackRadioButton_CheckedChanged(object sender, EventArgs e)
+        {
+            if (VolumeSampleProviders?.Count > 0)
+            {
+                RadioButton radioButton = (RadioButton)sender;
+                string selectedTrack = radioButton.Name;
+
+                float speed = 0.025f;
+
+                Timer timer = new Timer()
+                {
+                    Interval = 33
+                };
+
+                VolumeSampleProvider fadeIn = null;
+                VolumeSampleProvider fadeOut = null;
+
+                foreach (var item in VolumeSampleProviders)
+                {
+                    var vsp = item.Value;
+
+                    if (item.Key.StartsWith("ins"))
+                    {
+                        if (item.Key == selectedTrack)
+                            fadeIn = vsp;
+
+                        if (vsp.Volume > 0.0f)
+                            fadeOut = vsp;
+                    }
+                }
+
+                fadeIn.Volume = 0.0f;
+                fadeOut.Volume = 1.0f;
+
+                timer.Tick += (sndr, evt) =>
+                {
+                    fadeOut.Volume -= speed;
+                    fadeIn.Volume += speed;
+
+                    progressBar1.Value = Math.Max((int)(fadeOut.Volume * 100.0f), 0);
+
+                    if (fadeOut.Volume <= 0.0f)
+                    {
+                        fadeIn.Volume = 1.0f;
+                        fadeOut.Volume = 0.0f;
+
+                        progressBar1.Visible = false;
+                        timer.Enabled = false;
+                    }
+                };
+
+                if (OutputDevice.PlaybackState != PlaybackState.Stopped)
+                {
+                    progressBar1.Visible = true;
+                }
+                timer.Enabled = true;
+            }
         }
     }
 
