@@ -92,8 +92,6 @@ namespace NieRAutomataMusicTest
 
         private void PauseButton_Click(object sender, EventArgs e)
         {
-            OutputDevice?.Stop();
-
             if (OutputDevice.PlaybackState == PlaybackState.Paused)
             {
                 pauseButton.Text = "Pause";
