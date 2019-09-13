@@ -40,7 +40,7 @@
             this.mainTracksPanel = new System.Windows.Forms.FlowLayoutPanel();
             this.overlayTracksPanel = new System.Windows.Forms.FlowLayoutPanel();
             this.playButton = new System.Windows.Forms.Button();
-            this.progressBar1 = new System.Windows.Forms.ProgressBar();
+            this.fadeProgress = new System.Windows.Forms.ProgressBar();
             ((System.ComponentModel.ISupportInitialize)(this.playPosition)).BeginInit();
             this.SuspendLayout();
             // 
@@ -136,20 +136,20 @@
             this.playButton.UseVisualStyleBackColor = true;
             this.playButton.Click += new System.EventHandler(this.PlayButton_Click);
             // 
-            // progressBar1
+            // fadeProgress
             // 
-            this.progressBar1.Location = new System.Drawing.Point(13, 398);
-            this.progressBar1.Name = "progressBar1";
-            this.progressBar1.Size = new System.Drawing.Size(250, 23);
-            this.progressBar1.TabIndex = 9;
-            this.progressBar1.Visible = false;
+            this.fadeProgress.Location = new System.Drawing.Point(13, 398);
+            this.fadeProgress.Name = "fadeProgress";
+            this.fadeProgress.Size = new System.Drawing.Size(250, 23);
+            this.fadeProgress.TabIndex = 9;
+            this.fadeProgress.Visible = false;
             // 
             // MainWindow
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(651, 584);
-            this.Controls.Add(this.progressBar1);
+            this.Controls.Add(this.fadeProgress);
             this.Controls.Add(this.overlayTracksPanel);
             this.Controls.Add(this.mainTracksPanel);
             this.Controls.Add(this.trackList);
@@ -184,7 +184,7 @@
         private System.Windows.Forms.FlowLayoutPanel mainTracksPanel;
         private System.Windows.Forms.FlowLayoutPanel overlayTracksPanel;
         private System.Windows.Forms.Button playButton;
-        private System.Windows.Forms.ProgressBar progressBar1;
+        private System.Windows.Forms.ProgressBar fadeProgress;
     }
 }
 
