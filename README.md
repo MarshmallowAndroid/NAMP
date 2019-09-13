@@ -16,6 +16,6 @@ Plays and loops different streams together (vocals, instruments, and 8-bit versi
 The [beats.txt](beats.txt) file contains the BPM and the looping points (in samples) of the tracks that I have analyzed with Audacity. I'll try to find the real looping information from the game (or anywhere for that matter) but for now, this should do.
 
 ## TODO
-- [X] A proper UI
+- [X] ~~A proper UI~~
 - [ ] A proper fade effect
 - [ ] Getting rid of the occasional subtle clicking when looping
