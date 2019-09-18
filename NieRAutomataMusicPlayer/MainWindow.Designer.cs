@@ -50,7 +50,7 @@
             this.musicPath.Name = "musicPath";
             this.musicPath.Size = new System.Drawing.Size(627, 20);
             this.musicPath.TabIndex = 0;
-            this.musicPath.Text = "F:\\NieRAutomata Modding\\NME2-0.5-alpha-x64\\x64\\separated";
+            this.musicPath.Text = "F:\\NieRAutomata Modding\\NME2-0.5-alpha-x64\\x64\\all";
             // 
             // playPosition
             // 

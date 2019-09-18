@@ -29,8 +29,6 @@ namespace NieRAutomataMusicTest
         public MainWindow()
         {
             InitializeComponent();
-
-            Console.WriteLine(Environment.CurrentDirectory);
         }
 
         private void MainWindow_FormClosing(object sender, FormClosingEventArgs e)
@@ -150,7 +148,7 @@ namespace NieRAutomataMusicTest
                             friendlyTrackName += "8-bit ";
 
                         if (trackName.Contains("voc"))
-                            friendlyTrackName += "Vocals ";
+                            friendlyTrackName += "Vocals";
 
                         RadioButton trackRadioButton = new RadioButton()
                         {
@@ -161,7 +159,7 @@ namespace NieRAutomataMusicTest
 
                         mainTracksPanel.Controls.Add(trackRadioButton);
                     }
-                    else
+                    else if (trackName.StartsWith("voc"))
                     {
                         string trackFile = Reader.GetValue(selectedSong, trackName);
                         trackList.Items.Add(new ListViewItem(new[] { trackName, trackFile }));
@@ -195,7 +193,8 @@ namespace NieRAutomataMusicTest
 
             OutputDevice?.Stop();
 
-            string musicDirectory = musicPath.Text + "\\" + songName + "\\";
+            //string musicDirectory = musicPath.Text + "\\" + songName + "\\";
+            string musicDirectory = musicPath.Text + "\\";
 
             VorbisWaveReaders = new List<VorbisWaveReader>();
             LoopStreams = new List<LoopStream>();
@@ -367,6 +366,7 @@ namespace NieRAutomataMusicTest
     public class CachedMusic
     {
         public float[] SoundData { get; private set; }
+
         public WaveFormat WaveFormat { get; private set; }
 
         public CachedMusic(string filename)

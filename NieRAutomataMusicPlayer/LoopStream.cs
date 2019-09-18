@@ -9,62 +9,90 @@ namespace NieRAutomataMusicTest
 {
     public class LoopStream : WaveStream
     {
-        private readonly WaveStream waveStream;
+        private readonly WaveStream sourceStream;
         private readonly int loopStart;
         private readonly int loopEnd;
+        private readonly object readLock = new object();
 
         public LoopStream(WaveStream source, int loopStart, int loopEnd)
         {
-            waveStream = source;
+            sourceStream = source;
+
+            WaveFormat = sourceStream.WaveFormat;
+            Length = source.Length;
 
             // Convert samples to bytes
-            this.loopStart = loopStart * (waveStream.WaveFormat.BitsPerSample / 4);
-            this.loopEnd = loopEnd * (waveStream.WaveFormat.BitsPerSample / 4);
-
-            WaveFormat = waveStream.WaveFormat;
-            Length = source.Length;
+            this.loopStart = (loopStart - (loopStart % WaveFormat.Channels)) * WaveFormat.BlockAlign;
+            this.loopEnd = (loopEnd - (loopEnd % WaveFormat.Channels)) * WaveFormat.BlockAlign;
         }
 
         public override WaveFormat WaveFormat { get; }
 
         public override long Length { get; }
 
-        public override long Position { get => waveStream.Position; set => waveStream.Position = value; }
+        public override long Position
+        {
+            get
+            {
+                try
+                {
+                    if (sourceStream != null)
+                        return sourceStream.Position;
+                }
+                catch (NullReferenceException)
+                {
+                    return 0;
+                }
+
+                return 0;
+            }
+            set
+            {
+                if (sourceStream != null)
+                    sourceStream.Position = value;
+            }
+        }
 
         public override int Read(byte[] buffer, int offset, int count)
         {
-            long remainder = loopEnd - Position; // Remaining bytes before looping
+            int intPosition = Convert.ToInt32(Position);
+            int ahead = intPosition + count;
 
-            if (remainder < 0) // For some reason, remainder is negative when about to reach the loop end
+            // plan ahead
+            if (ahead >= loopEnd)
             {
-                Position = loopStart; // Loop
+                lock (readLock) // no idea if this actually makes a difference, but i'll check one day
+                {
+                    int remainder = loopEnd - intPosition;
+                    int bytesRead = 0;
 
-                waveStream.Read(buffer, offset, (int)Math.Abs(remainder)); // Read the remaining bytes
+                    bytesRead += sourceStream.Read(buffer, offset, remainder); // first pass, get the end of the loop
+
+                    Position = loopStart; // seek to start of loop
+
+                    // make sure the count of the next bytes we'll be playing from stream
+                    // are the same as always
+                    while (bytesRead < count)
+                    {
+                        int leftover = 0;
+
+                        // select what would give the same value as count
+                        if (bytesRead + (count - bytesRead) == count) leftover = count - bytesRead;
+                        else if (bytesRead + (count - remainder) == count) leftover = count - remainder;
+
+                        // bytesRead seems to work for now, i'll fix it if something goes wrong :')
+                        bytesRead += sourceStream.Read(buffer, offset + bytesRead, leftover);
+                    }
+
+                    return bytesRead; // pray to cthulhu the player doesn't shut down
+                }
             }
+            else // read normally
+            {
+                int bytesRead = sourceStream.Read(buffer, offset, count);
 
-            int bytesRead = waveStream.Read(buffer, offset, count); // Normal read
-
-            return bytesRead;
+                return bytesRead;
+            }
         }
-
-        // Backup lol
-        //
-        //public override int Read(byte[] buffer, int offset, int count)
-        //{
-        //    int bytesRead = 0;
-
-        //    int remainder = (int)Position - loopEnd;
-
-        //    if (Position >= loopEnd)
-        //    {
-        //        Position = loopStart;
-
-        //        waveStream.Read(buffer, offset, remainder);
-        //    }
-
-        //    bytesRead = waveStream.Read(buffer, offset, count);
-
-        //    return bytesRead;
-        //}
     }
 }
