@@ -26,7 +26,8 @@ The [beats.txt](beats.txt) file contains the BPM and the looping points (in samp
 - [X] ~~Get rid of the occasional subtle clicking when looping~~
 - [ ] Fade when switching songs
 - [ ] Gimmicky pause/resume sound effect
-- [ ] Support for songs with layers with different lengths like Alien Manifestation
+- [ ] Support for songs with other versions like Alien Manifestation
+- [ ] Rework mappings
 
 ## Known issues
-- Resuming after being paused for quite a while will makes the music choppy
+- Resuming after being paused for quite a while will make the music choppy
