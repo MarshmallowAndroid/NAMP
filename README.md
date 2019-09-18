@@ -15,7 +15,18 @@ Plays and loops different streams together (vocals, instruments, and 8-bit versi
 ## Beats info
 The [beats.txt](beats.txt) file contains the BPM and the looping points (in samples) of the tracks that I have analyzed with Audacity. I'll try to find the real looping information from the game (or anywhere for that matter) but for now, this should do.
 
+## "Verified" working music (little to no clicking during playback)
+1. Pascal
+2. Amusement Park
+3. A Beautiful Song
+
 ## TODO
-- [X] ~~A proper UI~~
-- [X] ~~A proper fade effect~~
-- [X] ~~Getting rid of the occasional subtle clicking when looping~~
+- [X] ~~Design proper UI~~
+- [X] ~~Implement proper fade effect~~
+- [X] ~~Get rid of the occasional subtle clicking when looping~~
+- [ ] Fade when switching songs
+- [ ] Gimmicky pause/resume sound effect
+- [ ] Support for songs with layers with different lengths like Alien Manifestation
+
+## Known issues
+- Resuming after being paused for quite a while will makes the music choppy
