@@ -19,6 +19,8 @@ The [beats.txt](beats.txt) file contains the BPM and the looping points (in samp
 1. Pascal
 2. Amusement Park
 3. A Beautiful Song
+4. Memories of Dust
+5. The Sound of the End
 
 ## TODO
 - [X] ~~Design proper UI~~
