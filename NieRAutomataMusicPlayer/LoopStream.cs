@@ -22,8 +22,8 @@ namespace NieRAutomataMusicTest
             Length = source.Length;
 
             // Convert samples to bytes
-            this.loopStart = (loopStart - (loopStart % WaveFormat.Channels)) * WaveFormat.BlockAlign;
-            this.loopEnd = (loopEnd - (loopEnd % WaveFormat.Channels)) * WaveFormat.BlockAlign;
+            this.loopStart = (loopStart + (loopStart % WaveFormat.Channels)) * WaveFormat.BlockAlign;
+            this.loopEnd = (loopEnd + (loopEnd % WaveFormat.Channels)) * WaveFormat.BlockAlign;
         }
 
         public override WaveFormat WaveFormat { get; }
@@ -55,7 +55,7 @@ namespace NieRAutomataMusicTest
 
         public override int Read(byte[] buffer, int offset, int count)
         {
-            int intPosition = Convert.ToInt32(Position);
+            int intPosition = Convert.ToInt32(sourceStream.Position);
             int ahead = intPosition + count;
 
             // plan ahead
@@ -68,7 +68,7 @@ namespace NieRAutomataMusicTest
 
                     bytesRead += sourceStream.Read(buffer, offset, remainder); // first pass, get the end of the loop
 
-                    Position = loopStart; // seek to start of loop
+                    sourceStream.Position = loopStart; // seek to start of loop
 
                     // make sure the count of the next bytes we'll be playing from stream
                     // are the same as always
@@ -83,6 +83,8 @@ namespace NieRAutomataMusicTest
                         // bytesRead seems to work for now, i'll fix it if something goes wrong :')
                         bytesRead += sourceStream.Read(buffer, offset + bytesRead, leftover);
                     }
+
+                    Console.WriteLine("bytesRead: " + bytesRead);
 
                     return bytesRead; // pray to cthulhu the player doesn't shut down
                 }
