@@ -18,17 +18,26 @@ namespace NieRAutomataMusicTest
     {
         WaveOut OutputDevice = new WaveOut();
 
-        List<VorbisWaveReader> VorbisWaveReaders;
-        List<LoopStream> LoopStreams;
+        List<CustomVorbisWaveReader> CustomVorbisWaveReaders;
+        List<LoopSampleProvider> LoopSampleProviders;
         List<KeyValuePair<string, VolumeSampleProvider>> VolumeSampleProviders;
 
         MixingSampleProvider MixingSampleProvider;
 
-        FileMapReader Reader = new FileMapReader(@"..\..\..\mapping.txt");
+        FileMapReader Reader;
+
+        float fadeSpeed = 0.0075f;
+        int fadeInterval = 16;
 
         public MainWindow()
         {
             InitializeComponent();
+
+            // OutputDevice.DesiredLatency = 100;
+            OutputDevice.PlaybackStopped += (sndr, evt) =>
+            {
+                Flush();
+            };
         }
 
         private void MainWindow_FormClosing(object sender, FormClosingEventArgs e)
@@ -39,47 +48,59 @@ namespace NieRAutomataMusicTest
 
         private void MainWindow_Load(object sender, EventArgs e)
         {
+            Reader = new FileMapReader(@"..\..\..\mapping.txt");
+
             string[] availableSongs = Reader.GetAvailableSongs();
             songList.Items.AddRange(availableSongs);
+
+            Reader.Dispose();
         }
 
         private void PositionUpdate_Tick(object sender, EventArgs e)
         {
-            if (VorbisWaveReaders.Count > 0)
+            if (OutputDevice.PlaybackState != PlaybackState.Stopped)
             {
-                VorbisWaveReader vorbisWaveReader = VorbisWaveReaders.First();
-                playPosition.Value = (int)((double)playPosition.Maximum * (vorbisWaveReader.CurrentTime.TotalSeconds / vorbisWaveReader.TotalTime.TotalSeconds));
+                CustomVorbisWaveReader customVorbisWaveReader = CustomVorbisWaveReaders.First();
+                long currentPos = customVorbisWaveReader.Position;
+                long currentLength = customVorbisWaveReader.Length;
+                playPosition.Value = (int)((double)playPosition.Maximum * ((double)currentPos / (double)currentLength));
             }
         }
 
         private void PlayPosition_Scroll(object sender, EventArgs e)
         {
-            if (LoopStreams?.Count > 0)
-            {
-                double newTime = LoopStreams.First().TotalTime.TotalSeconds * (playPosition.Value / (double)playPosition.Maximum);
+            // The looper is now a sample provider, so repositioning won't work well with looping.
+            //
+            //if (OutputDevice.PlaybackState != PlaybackState.Stopped)
+            //{
+            //    long currentLength = LoopSampleProviders.First().BaseSource.Length;
+            //    long newPos = (long)(currentLength * ((double)playPosition.Value / (double)playPosition.Maximum));
 
-                try
-                {
-                    foreach (var ls in LoopStreams)
-                    {
-                        ls.CurrentTime = TimeSpan.FromSeconds(newTime);
-                    }
-                }
-                catch (Exception)
-                {
-                }
-            }
+            //    try
+            //    {
+            //        foreach (var lsp in LoopSampleProviders)
+            //        {
+            //            lsp.BaseSource.Position = newPos;
+            //        }
+            //    }
+            //    catch (Exception)
+            //    {
+            //    }
+            //}
         }
 
         private void PlayButton_Click(object sender, EventArgs e)
         {
-            string selectedSong = songList.SelectedItem?.ToString();
+            if (OutputDevice.PlaybackState != PlaybackState.Stopped)
+            {
+                string selectedSong = songList.SelectedItem?.ToString();
 
-            OutputDevice?.Stop();
-            OutputDevice?.Dispose();
+                OutputDevice.Stop();
+                OutputDevice.Dispose();
 
-            InitPlayer(selectedSong);
-            InitVolumes();
+                InitPlayer(selectedSong);
+                InitVolumes();
+            }
 
             if (MixingSampleProvider != null)
             {
@@ -90,7 +111,7 @@ namespace NieRAutomataMusicTest
 
         private void PauseButton_Click(object sender, EventArgs e)
         {
-            IWavePlayer player = new WaveOutEvent();
+            DirectSoundOut tempPlayer = new DirectSoundOut();
             VorbisWaveReader pauseVorbis = new VorbisWaveReader("pause.ogg");
             VorbisWaveReader resumeVorbis = new VorbisWaveReader("resume.ogg");
 
@@ -100,16 +121,16 @@ namespace NieRAutomataMusicTest
 
                 pauseButton.Text = "Pause";
 
-                player.Init(resumeVorbis);
-                player.Play();
+                tempPlayer.Init(resumeVorbis);
+                tempPlayer.Play();
 
-                player.PlaybackStopped += (snd, evt) =>
+                tempPlayer.PlaybackStopped += (snd, evt) =>
                 {
-                    player.Dispose();
+                    tempPlayer.Dispose();
                     pauseVorbis.Dispose();
                     resumeVorbis.Dispose();
 
-                    OutputDevice.Resume();
+                    OutputDevice.Play();
 
                     pauseButton.Enabled = true;
                 };
@@ -121,12 +142,12 @@ namespace NieRAutomataMusicTest
 
                 pauseButton.Text = "Resume";
 
-                player.Init(pauseVorbis);
-                player.Play();
+                tempPlayer.Init(pauseVorbis);
+                tempPlayer.Play();
 
-                player.PlaybackStopped += (snd, evt) =>
+                tempPlayer.PlaybackStopped += (snd, evt) =>
                 {
-                    player.Dispose();
+                    tempPlayer.Dispose();
                     pauseVorbis.Dispose();
                     resumeVorbis.Dispose();
 
@@ -138,25 +159,115 @@ namespace NieRAutomataMusicTest
 
         }
 
-        private void SongList_SelectedIndexChanged(object sender, EventArgs e)
+        private void Flush()
         {
-            string selectedSong = songList.SelectedItem?.ToString();
-
             if (VolumeSampleProviders?.Count > 0)
             {
-                foreach (var item in LoopStreams)
+                foreach (var item in LoopSampleProviders)
                 {
-                    item.Dispose();
+                    item.BaseSource.Dispose();
                 }
 
-                foreach (var item in VorbisWaveReaders)
+                foreach (var item in CustomVorbisWaveReaders)
                 {
                     item.Dispose();
                 }
             }
+        }
+
+        private void InitPlayer(string songName)
+        {
+            Reader = new FileMapReader(@"mapping.txt");
+
+            OutputDevice.Stop();
+
+            bool isMSPInit = false;
+            string[] tracks = Reader.GetAvailableTracks(songName);
+
+            string musicDirectory = musicPath.Text + "\\";
+
+            CustomVorbisWaveReaders = new List<CustomVorbisWaveReader>();
+            LoopSampleProviders = new List<LoopSampleProvider>();
+            VolumeSampleProviders = new List<KeyValuePair<string, VolumeSampleProvider>>();
+
+            foreach (var track in tracks)
+            {
+                string trackFile = Reader.GetValue(songName, track);
+                int loopStart = int.Parse(Reader.GetValue(songName, "loop_start"));
+                int loopEnd = int.Parse(Reader.GetValue(songName, "loop_end"));
+
+                CustomVorbisWaveReaders.Add(new CustomVorbisWaveReader(musicDirectory + trackFile));
+
+                Console.Write("Add LoopStream for song " + songName + " track " + track);
+
+                LoopSampleProviders.Add(new LoopSampleProvider(CustomVorbisWaveReaders.Last(), loopStart, loopEnd) { Loop = true });
+                VolumeSampleProviders.Add(new KeyValuePair<string, VolumeSampleProvider>(track, new VolumeSampleProvider(LoopSampleProviders.Last())));
+
+                if (!isMSPInit)
+                {
+                    MixingSampleProvider = new MixingSampleProvider(CustomVorbisWaveReaders.First().WaveFormat);
+                    isMSPInit = true;
+                }
+
+                MixingSampleProvider.AddMixerInput(VolumeSampleProviders.Last().Value);
+            }
+
+            Reader.Dispose();
+        }
+
+        private void InitVolumes()
+        {
+            RadioButton initialMainTrack = null;
+            RadioButton initialOverlayTrack = null;
+
+            foreach (RadioButton control in mainTracksPanel.Controls)
+            {
+                if (control.Checked)
+                    initialMainTrack = control;
+            }
+
+            foreach (RadioButton control in overlayTracksPanel.Controls)
+            {
+                if (control.Checked)
+                    initialOverlayTrack = control;
+            }
+
+            foreach (var vsp in VolumeSampleProviders)
+            {
+                if (vsp.Key.StartsWith("ins"))
+                {
+                    if (vsp.Key == initialMainTrack.Name)
+                        vsp.Value.Volume = 1.0f;
+                    else
+                        vsp.Value.Volume = 0.0f;
+                }
+
+                if (initialOverlayTrack != null)
+                {
+                    if (vsp.Key.StartsWith("voc"))
+                    {
+                        if (vsp.Key == initialOverlayTrack.Name)
+                            vsp.Value.Volume = 1.0f;
+                        else
+                            vsp.Value.Volume = 0.0f;
+                    }
+                }
+            }
+
+            PositionUpdate.Enabled = true;
+        }
+
+        private void SongList_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            Reader = new FileMapReader("mapping.txt");
+
+            OutputDevice.Stop();
+
+            string selectedSong = songList.SelectedItem?.ToString();
 
             if (selectedSong != null)
             {
+                bool offRadioButtonAdded = false;
                 string[] trackNames = Reader.GetAvailableTracks(selectedSong);
 
                 trackList.Items.Clear();
@@ -178,8 +289,6 @@ namespace NieRAutomataMusicTest
                             friendlyTrackName += "Normal ";
                         if (trackName.Contains("med"))
                             friendlyTrackName += "Medium ";
-                        if (trackName.Contains("dyn"))
-                            friendlyTrackName += "Dynamic ";
                         if (trackName.Contains("8bt"))
                             friendlyTrackName += "8-bit ";
 
@@ -202,6 +311,20 @@ namespace NieRAutomataMusicTest
                     }
                     else if (trackName.StartsWith("voc"))
                     {
+                        if (!offRadioButtonAdded)
+                        {
+                            RadioButton noneRadioButton = new RadioButton()
+                            {
+                                Text = "None",
+                                Name = "none"
+                            };
+                            noneRadioButton.CheckedChanged += NoneRadioButton_CheckedChanged;
+
+                            overlayTracksPanel.Controls.Add(noneRadioButton);
+
+                            offRadioButtonAdded = true;
+                        }
+
                         string trackFile = Reader.GetValue(selectedSong, trackName);
                         trackList.Items.Add(new ListViewItem(new[] { trackName, trackFile }));
 
@@ -212,108 +335,41 @@ namespace NieRAutomataMusicTest
                             numbering = " " + number.ToString();
                         }
 
-                        RadioButton separatedVocalsRadioButton = new RadioButton()
+                        RadioButton overlayRadioButton = new RadioButton()
                         {
                             Text = "Vocals" + numbering,
                             Name = trackName
                         };
-                        separatedVocalsRadioButton.CheckedChanged += SeparatedVocalsRadioButton_CheckedChanged;
+                        overlayRadioButton.CheckedChanged += OverlayRadioButton_CheckedChanged;
 
-                        overlayTracksPanel.Controls.Add(separatedVocalsRadioButton);
+                        overlayTracksPanel.Controls.Add(overlayRadioButton);
                     }
-
                 }
-
-                RadioButton disableRadioButton = new RadioButton()
-                {
-                    Text = "OFF",
-                    Name = "off"
-                };
-                disableRadioButton.CheckedChanged += DisableRadioButton_CheckedChanged; ;
-
-                overlayTracksPanel.Controls.Add(disableRadioButton);
-
-                InitPlayer(selectedSong);
 
                 ((RadioButton)mainTracksPanel.Controls[0]).Checked = true;
 
+                if (overlayTracksPanel.Controls.Count > 0)
+                    ((RadioButton)overlayTracksPanel.Controls[0]).Checked = true;
+
+                //InitPlayer(selectedSong);
                 InitVolumes();
 
                 trackList.Sorting = SortOrder.Ascending;
                 trackList.Sort();
             }
+
+            Reader.Dispose();
         }
 
-
-        private void InitPlayer(string songName)
-        {
-            bool isMSPInit = false;
-            string[] tracks = Reader.GetAvailableTracks(songName);
-
-            OutputDevice?.Stop();
-
-            //string musicDirectory = musicPath.Text + "\\" + songName + "\\";
-            string musicDirectory = musicPath.Text + "\\";
-
-            VorbisWaveReaders = new List<VorbisWaveReader>();
-            LoopStreams = new List<LoopStream>();
-            VolumeSampleProviders = new List<KeyValuePair<string, VolumeSampleProvider>>();
-
-            foreach (var track in tracks)
-            {
-                string trackFile = Reader.GetValue(songName, track);
-                int loopStart = int.Parse(Reader.GetValue(songName, "loop_start"));
-                int loopEnd = int.Parse(Reader.GetValue(songName, "loop_end"));
-
-                VorbisWaveReaders.Add(new VorbisWaveReader(musicDirectory + trackFile));
-                LoopStreams.Add(new LoopStream(VorbisWaveReaders.Last(), loopStart, loopEnd));
-                VolumeSampleProviders.Add(new KeyValuePair<string, VolumeSampleProvider>(track, new VolumeSampleProvider(LoopStreams.Last().ToSampleProvider())));
-
-                if (!isMSPInit)
-                {
-                    MixingSampleProvider = new MixingSampleProvider(VorbisWaveReaders.First().WaveFormat);
-                    isMSPInit = true;
-                }
-
-                MixingSampleProvider.AddMixerInput(VolumeSampleProviders.Last().Value);
-            }
-        }
-
-        private void InitVolumes()
-        {
-            RadioButton initialTrack = null;
-
-            foreach (RadioButton control in mainTracksPanel.Controls)
-            {
-                if (control.Checked)
-                    initialTrack = control;
-            }
-
-            foreach (var vsp in VolumeSampleProviders)
-            {
-                if (vsp.Key.StartsWith("ins"))
-                {
-                    if (vsp.Key == initialTrack.Name)
-                        vsp.Value.Volume = 1.0f;
-                    else
-                        vsp.Value.Volume = 0.0f;
-                }
-                else
-                    vsp.Value.Volume = 0.0f;
-            }
-
-            PositionUpdate.Enabled = true;
-        }
-
-        private void SeparatedVocalsRadioButton_CheckedChanged(object sender, EventArgs e)
+        private void OverlayRadioButton_CheckedChanged(object sender, EventArgs e)
         {
             RadioButton checkBox = (RadioButton)sender;
             string selectedTrack = checkBox.Name;
 
-            float speed = 0.025f;
+            float speed = fadeSpeed;
             Timer timer = new Timer()
             {
-                Interval = 33
+                Interval = fadeInterval
             };
 
             VolumeSampleProvider fade = null;
@@ -355,58 +411,60 @@ namespace NieRAutomataMusicTest
             timer.Enabled = true;
         }
 
-        private void DisableRadioButton_CheckedChanged(object sender, EventArgs e)
+        private void NoneRadioButton_CheckedChanged(object sender, EventArgs e)
         {
-            RadioButton checkBox = (RadioButton)sender;
+            RadioButton radioButton = (RadioButton)sender;
 
-            float speed = 0.025f;
+            float speed = fadeSpeed;
             Timer timer = new Timer()
             {
-                Interval = 33
+                Interval = fadeInterval
             };
 
             VolumeSampleProvider fade = null;
 
-            foreach (var item in VolumeSampleProviders)
+            foreach (var vsp in VolumeSampleProviders)
             {
-                var vsp = item.Value;
-                if (vsp.Volume > 0.0f)
-                    fade = vsp;
-            }
-
-            if (checkBox.Checked)
-            {
-                fade.Volume = 1.0f;
-                timer.Tick += (sndr, evt) =>
+                if (vsp.Key.StartsWith("voc"))
                 {
-                    fade.Volume -= speed;
-                    if (fade.Volume <= 0.0f)
-                    {
-                        fade.Volume = 0.0f;
-                        timer.Enabled = false;
-                    }
-                };
+                    if (vsp.Value.Volume > 0.0f)
+                        fade = vsp.Value;
+                }
             }
 
-            timer.Enabled = true;
+            if (fade != null)
+            {
+                if (radioButton.Checked)
+                {
+                    fade.Volume = 1.0f;
+                    timer.Tick += (sndr, evt) =>
+                    {
+                        fade.Volume -= speed;
+                        if (fade.Volume <= 0.0f)
+                        {
+                            fade.Volume = 0.0f;
+                            timer.Enabled = false;
+                        }
+                    };
+                }
+
+                timer.Enabled = true;
+            }
         }
 
         private void TrackRadioButton_CheckedChanged(object sender, EventArgs e)
         {
             string selectedSong = songList.SelectedItem?.ToString();
 
-            if (OutputDevice.PlaybackState != PlaybackState.Playing)
-                InitPlayer(selectedSong);
-
-            if (VolumeSampleProviders?.Count > 0)
+            if (OutputDevice.PlaybackState == PlaybackState.Playing || OutputDevice.PlaybackState == PlaybackState.Paused)
             {
                 RadioButton radioButton = (RadioButton)sender;
                 string selectedTrack = radioButton.Name;
 
-                float speed = 0.025f;
+                float speed = fadeSpeed;
                 Timer timer = new Timer()
                 {
-                    Interval = 33
+                    Interval = fadeInterval
                 };
 
                 VolumeSampleProvider fadeIn = null;
@@ -453,48 +511,16 @@ namespace NieRAutomataMusicTest
                     fadeProgress.Visible = true;
                 }
 
-                timer.Enabled = true;
-            }
-        }
-    }
-
-    public class CachedMusic
-    {
-        public float[] SoundData { get; private set; }
-
-        public WaveFormat WaveFormat { get; private set; }
-
-        public CachedMusic(string filename)
-        {
-            using (var vorbisWaveReader = new VorbisWaveReader(filename))
-            {
-                WaveFormat = vorbisWaveReader.WaveFormat;
-
-                var whole = new List<float>((int)(vorbisWaveReader.Length / 4));
-                var buffer = new float[vorbisWaveReader.WaveFormat.SampleRate * vorbisWaveReader.WaveFormat.Channels];
-
-                int samplesRead;
-
-                while ((samplesRead = vorbisWaveReader.Read(buffer, 0, buffer.Length)) > 0)
+                if (fadeIn != null && fadeOut != null)
                 {
-                    whole.AddRange(buffer.Take(samplesRead));
+                    timer.Enabled = true;
                 }
-
-                SoundData = whole.ToArray();
             }
-        }
-    }
-
-    public class CachedMusicSampleProvider : ISampleProvider
-    {
-        private readonly CachedMusic cachedMusic;
-        private long position;
-
-        public WaveFormat WaveFormat => throw new NotImplementedException();
-
-        public int Read(float[] buffer, int offset, int count)
-        {
-            throw new NotImplementedException();
+            else
+            {
+                InitPlayer(selectedSong);
+                InitVolumes();
+            }
         }
     }
 }

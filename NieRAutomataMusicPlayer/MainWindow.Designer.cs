@@ -78,10 +78,12 @@
             // 
             // songList
             // 
+            this.songList.Font = new System.Drawing.Font("Microsoft Sans Serif", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.songList.FormattingEnabled = true;
+            this.songList.ItemHeight = 18;
             this.songList.Location = new System.Drawing.Point(12, 91);
             this.songList.Name = "songList";
-            this.songList.Size = new System.Drawing.Size(251, 147);
+            this.songList.Size = new System.Drawing.Size(251, 148);
             this.songList.TabIndex = 6;
             this.songList.SelectedIndexChanged += new System.EventHandler(this.SongList_SelectedIndexChanged);
             // 
@@ -94,7 +96,7 @@
             this.trackList.HideSelection = false;
             this.trackList.Location = new System.Drawing.Point(269, 91);
             this.trackList.Name = "trackList";
-            this.trackList.Size = new System.Drawing.Size(251, 147);
+            this.trackList.Size = new System.Drawing.Size(251, 148);
             this.trackList.TabIndex = 7;
             this.trackList.UseCompatibleStateImageBehavior = false;
             this.trackList.View = System.Windows.Forms.View.Details;
@@ -112,15 +114,15 @@
             // mainTracksPanel
             // 
             this.mainTracksPanel.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.mainTracksPanel.Location = new System.Drawing.Point(12, 244);
+            this.mainTracksPanel.Location = new System.Drawing.Point(13, 245);
             this.mainTracksPanel.Name = "mainTracksPanel";
-            this.mainTracksPanel.Size = new System.Drawing.Size(251, 147);
+            this.mainTracksPanel.Size = new System.Drawing.Size(250, 147);
             this.mainTracksPanel.TabIndex = 8;
             // 
             // overlayTracksPanel
             // 
             this.overlayTracksPanel.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.overlayTracksPanel.Location = new System.Drawing.Point(269, 244);
+            this.overlayTracksPanel.Location = new System.Drawing.Point(269, 245);
             this.overlayTracksPanel.Name = "overlayTracksPanel";
             this.overlayTracksPanel.Size = new System.Drawing.Size(251, 147);
             this.overlayTracksPanel.TabIndex = 8;
@@ -138,9 +140,9 @@
             // 
             // fadeProgress
             // 
-            this.fadeProgress.Location = new System.Drawing.Point(13, 398);
+            this.fadeProgress.Location = new System.Drawing.Point(12, 398);
             this.fadeProgress.Name = "fadeProgress";
-            this.fadeProgress.Size = new System.Drawing.Size(250, 23);
+            this.fadeProgress.Size = new System.Drawing.Size(252, 23);
             this.fadeProgress.TabIndex = 9;
             this.fadeProgress.Visible = false;
             // 

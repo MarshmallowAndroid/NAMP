@@ -7,29 +7,28 @@ using System.IO;
 
 namespace NieRAutomataMusicTest
 {
-    class FileMapReader
+    class FileMapReader : IDisposable
     {
-        private readonly string filename;
-        private StreamReader reader;
+        private readonly StreamReader reader;
 
         public FileMapReader(string filename)
-        {
-            this.filename = filename;
-        }
-
-        private void Initialize()
         {
             reader = new StreamReader(filename);
         }
 
-        private void Dispose()
+        private void Reset()
+        {
+            reader.BaseStream.Position = 0;
+        }
+
+        public void Dispose()
         {
             reader.Dispose();
         }
 
         public void GetMapping(string songName)
         {
-            Initialize();
+            Reset();
 
             while (!reader.EndOfStream)
             {
@@ -45,13 +44,11 @@ namespace NieRAutomataMusicTest
                     }
                 }
             }
-
-            reader.Dispose();
         }
 
         public string GetValue(string songName, string key)
         {
-            Initialize();
+            Reset();
 
             while (!reader.EndOfStream)
             {
@@ -74,8 +71,6 @@ namespace NieRAutomataMusicTest
                 }
             }
 
-            reader.Dispose();
-
             return "";
         }
 
@@ -83,7 +78,7 @@ namespace NieRAutomataMusicTest
         {
             List<string> trackList = new List<string>();
 
-            Initialize();
+            Reset();
 
             while (!reader.EndOfStream)
             {
@@ -106,8 +101,6 @@ namespace NieRAutomataMusicTest
                 }
             }
 
-            reader.Dispose();
-
             return trackList.ToArray();
         }
 
@@ -115,7 +108,7 @@ namespace NieRAutomataMusicTest
         {
             List<string> songList = new List<string>();
 
-            Initialize();
+            Reset();
 
             while (!reader.EndOfStream)
             {
@@ -128,8 +121,6 @@ namespace NieRAutomataMusicTest
                     songList.Add(songName);
                 }
             }
-
-            reader.Dispose();
 
             return songList.ToArray();
         }
