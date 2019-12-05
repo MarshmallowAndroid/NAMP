@@ -24,10 +24,12 @@ namespace NieRAutomataMusicTest
 
         MixingSampleProvider MixingSampleProvider;
 
-        FileMapReader Reader;
+        FileMapReader MapReader;
 
         float fadeSpeed = 0.0075f;
         int fadeInterval = 16;
+
+        string mapLocation = @"mapping.txt";
 
         public MainWindow()
         {
@@ -48,12 +50,12 @@ namespace NieRAutomataMusicTest
 
         private void MainWindow_Load(object sender, EventArgs e)
         {
-            Reader = new FileMapReader(@"..\..\..\mapping.txt");
+            MapReader = new FileMapReader(mapLocation);
 
-            string[] availableSongs = Reader.GetAvailableSongs();
+            string[] availableSongs = MapReader.GetAvailableSongs();
             songList.Items.AddRange(availableSongs);
 
-            Reader.Dispose();
+            MapReader.Dispose();
         }
 
         private void PositionUpdate_Tick(object sender, EventArgs e)
@@ -69,24 +71,22 @@ namespace NieRAutomataMusicTest
 
         private void PlayPosition_Scroll(object sender, EventArgs e)
         {
-            // The looper is now a sample provider, so repositioning won't work well with looping.
-            //
-            //if (OutputDevice.PlaybackState != PlaybackState.Stopped)
-            //{
-            //    long currentLength = LoopSampleProviders.First().BaseSource.Length;
-            //    long newPos = (long)(currentLength * ((double)playPosition.Value / (double)playPosition.Maximum));
+            if (OutputDevice.PlaybackState != PlaybackState.Stopped)
+            {
+                long currentLength = LoopSampleProviders.First().BaseSource.Length;
+                int newPos = (int)(currentLength * ((double)playPosition.Value / (double)playPosition.Maximum));
 
-            //    try
-            //    {
-            //        foreach (var lsp in LoopSampleProviders)
-            //        {
-            //            lsp.BaseSource.Position = newPos;
-            //        }
-            //    }
-            //    catch (Exception)
-            //    {
-            //    }
-            //}
+                try
+                {
+                    foreach (var lsp in LoopSampleProviders)
+                    {
+                        lsp.Seek(newPos);
+                    }
+                }
+                catch (Exception)
+                {
+                }
+            }
         }
 
         private void PlayButton_Click(object sender, EventArgs e)
@@ -111,7 +111,7 @@ namespace NieRAutomataMusicTest
 
         private void PauseButton_Click(object sender, EventArgs e)
         {
-            DirectSoundOut tempPlayer = new DirectSoundOut();
+            WaveOut tempPlayer = new WaveOut();
             VorbisWaveReader pauseVorbis = new VorbisWaveReader("pause.ogg");
             VorbisWaveReader resumeVorbis = new VorbisWaveReader("resume.ogg");
 
@@ -177,12 +177,12 @@ namespace NieRAutomataMusicTest
 
         private void InitPlayer(string songName)
         {
-            Reader = new FileMapReader(@"mapping.txt");
+            MapReader = new FileMapReader(mapLocation);
 
             OutputDevice.Stop();
 
             bool isMSPInit = false;
-            string[] tracks = Reader.GetAvailableTracks(songName);
+            string[] tracks = MapReader.GetAvailableTracks(songName);
 
             string musicDirectory = musicPath.Text + "\\";
 
@@ -192,13 +192,13 @@ namespace NieRAutomataMusicTest
 
             foreach (var track in tracks)
             {
-                string trackFile = Reader.GetValue(songName, track);
-                int loopStart = int.Parse(Reader.GetValue(songName, "loop_start"));
-                int loopEnd = int.Parse(Reader.GetValue(songName, "loop_end"));
+                string trackFile = MapReader.GetValue(songName, track);
+                int loopStart = int.Parse(MapReader.GetValue(songName, "loop_start"));
+                int loopEnd = int.Parse(MapReader.GetValue(songName, "loop_end"));
 
                 CustomVorbisWaveReaders.Add(new CustomVorbisWaveReader(musicDirectory + trackFile));
 
-                Console.Write("Add LoopStream for song " + songName + " track " + track);
+                Console.WriteLine("Add LoopStream for song " + songName + " track " + track + ".");
 
                 LoopSampleProviders.Add(new LoopSampleProvider(CustomVorbisWaveReaders.Last(), loopStart, loopEnd) { Loop = true });
                 VolumeSampleProviders.Add(new KeyValuePair<string, VolumeSampleProvider>(track, new VolumeSampleProvider(LoopSampleProviders.Last())));
@@ -212,7 +212,7 @@ namespace NieRAutomataMusicTest
                 MixingSampleProvider.AddMixerInput(VolumeSampleProviders.Last().Value);
             }
 
-            Reader.Dispose();
+            MapReader.Dispose();
         }
 
         private void InitVolumes()
@@ -259,7 +259,7 @@ namespace NieRAutomataMusicTest
 
         private void SongList_SelectedIndexChanged(object sender, EventArgs e)
         {
-            Reader = new FileMapReader("mapping.txt");
+            MapReader = new FileMapReader(mapLocation);
 
             OutputDevice.Stop();
 
@@ -268,7 +268,7 @@ namespace NieRAutomataMusicTest
             if (selectedSong != null)
             {
                 bool offRadioButtonAdded = false;
-                string[] trackNames = Reader.GetAvailableTracks(selectedSong);
+                string[] trackNames = MapReader.GetAvailableTracks(selectedSong);
 
                 trackList.Items.Clear();
                 mainTracksPanel.Controls.Clear();
@@ -278,7 +278,7 @@ namespace NieRAutomataMusicTest
                 {
                     if (trackName.StartsWith("ins"))
                     {
-                        string trackFile = Reader.GetValue(selectedSong, trackName);
+                        string trackFile = MapReader.GetValue(selectedSong, trackName);
                         trackList.Items.Add(new ListViewItem(new[] { trackName, trackFile }));
 
                         string friendlyTrackName = "";
@@ -325,7 +325,7 @@ namespace NieRAutomataMusicTest
                             offRadioButtonAdded = true;
                         }
 
-                        string trackFile = Reader.GetValue(selectedSong, trackName);
+                        string trackFile = MapReader.GetValue(selectedSong, trackName);
                         trackList.Items.Add(new ListViewItem(new[] { trackName, trackFile }));
 
                         string numbering = "";
@@ -358,7 +358,7 @@ namespace NieRAutomataMusicTest
                 trackList.Sort();
             }
 
-            Reader.Dispose();
+            MapReader.Dispose();
         }
 
         private void OverlayRadioButton_CheckedChanged(object sender, EventArgs e)

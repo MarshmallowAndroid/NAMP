@@ -8,99 +8,6 @@ using System.Threading.Tasks;
 
 namespace NieRAutomataMusicTest
 {
-    //public class LoopStream : WaveStream
-    //{
-    //    private readonly CustomVorbisWaveReader sourceStream;
-    //    private readonly int loopStart;
-    //    private readonly int loopEnd;
-
-    //    public LoopStream(CustomVorbisWaveReader source, int loopStart, int loopEnd)
-    //    {
-    //        sourceStream = source;
-
-    //        WaveFormat = sourceStream.WaveFormat;
-    //        Length = source.Length;
-
-    //        // Convert samples to bytes
-    //        //this.loopStart = (loopStart + (loopStart % WaveFormat.Channels)) * WaveFormat.BlockAlign;
-    //        //this.loopEnd = (loopEnd + (loopEnd % WaveFormat.Channels)) * WaveFormat.BlockAlign;
-
-    //        //int tempLoopStart = loopStart * ((WaveFormat.BitsPerSample / 8) * WaveFormat.Channels);
-    //        //int tempLoopEnd = loopEnd * ((WaveFormat.BitsPerSample / 8) * WaveFormat.Channels);
-
-    //        //this.loopStart = tempLoopStart;
-    //        //this.loopEnd = tempLoopEnd;
-
-    //        this.loopStart = loopStart;
-    //        this.loopEnd = loopEnd;
-
-    //        Console.WriteLine(Length);
-    //    }
-
-    //    public override WaveFormat WaveFormat { get; }
-
-    //    public override long Length { get; }
-
-    //    public override long Position
-    //    {
-    //        get
-    //        {
-    //            try
-    //            {
-    //                if (sourceStream != null)
-    //                    return sourceStream.Position;
-    //            }
-    //            catch (NullReferenceException)
-    //            {
-    //                return 0;
-    //            }
-
-    //            return 0;
-    //        }
-    //        set
-    //        {
-    //            if (sourceStream != null)
-    //                sourceStream.Position = value;
-    //        }
-    //    }
-
-    //    bool loop = false;
-
-    //    public override int Read(byte[] buffer, int offset, int count)
-    //    {
-    //        int bytesRead = 0;
-
-    //        if (loop)
-    //        {
-    //            Position = loopStart;
-    //            loop = false;
-    //        }
-
-    //        if ((Position + count) >= loopEnd)
-    //        {
-    //            int remainder = loopEnd - (int)Position;
-
-    //            bytesRead = sourceStream.Read(buffer, offset, count);
-
-    //            loop = true;
-
-    //            Console.WriteLine(remainder);
-    //        }
-    //        else
-    //        {
-    //            bytesRead = sourceStream.Read(buffer, offset, count);
-    //        }
-
-
-    //        //if (Position >= loopEnd)
-    //        //{
-    //        //    loop = true;
-    //        //}
-
-    //        return bytesRead;
-    //    }
-    //}
-    
     public class LoopSampleProvider : ISampleProvider
     {
         private Queue<ISampleProvider> providers;
@@ -129,8 +36,6 @@ namespace NieRAutomataMusicTest
             this.end = end;
 
             currentProvider = providers.Dequeue();
-
-            Console.WriteLine();
         }
 
         public WaveStream BaseSource { get; private set; }
@@ -138,6 +43,16 @@ namespace NieRAutomataMusicTest
         public WaveFormat WaveFormat => providers.Peek().WaveFormat;
 
         public bool Loop { get; set; }
+
+        public void Seek(int position)
+        {
+            providers.Clear();
+
+            BaseSource.Position = position;
+
+            providers.Enqueue(new OffsetSampleProvider(BaseSource.ToSampleProvider()) { TakeSamples = ((end - position) - ((end - position) % 2)) * 2 });
+            currentProvider = providers.Dequeue();
+        }
 
         public int Read(float[] buffer, int offset, int count)
         {
@@ -156,8 +71,7 @@ namespace NieRAutomataMusicTest
                     {
                         Console.WriteLine("Loop.");
 
-                        // For some reason, readThisTime stays at 0 for some songs, so make it so that
-                        // we only seek to the start when the stream has advanced.
+                        // Only seek when the stream has advanced.
                         if (BaseSource.Position > start) BaseSource.Position = start;
 
                         providers.Enqueue(new OffsetSampleProvider(BaseSource.ToSampleProvider()) { TakeSamples = ((end - start) - ((end - start) % 2)) * 2 });
