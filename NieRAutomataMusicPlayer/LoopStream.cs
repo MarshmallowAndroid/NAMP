@@ -50,7 +50,11 @@ namespace NieRAutomataMusicTest
 
             BaseSource.Position = position;
 
-            providers.Enqueue(new OffsetSampleProvider(BaseSource.ToSampleProvider()) { TakeSamples = ((end - position) - ((end - position) % 2)) * 2 });
+            if (position < end)
+                providers.Enqueue(new OffsetSampleProvider(BaseSource.ToSampleProvider()) { TakeSamples = ((end - position) - ((end - position) % 2)) * 2 });
+            else
+                providers.Enqueue(new OffsetSampleProvider(BaseSource.ToSampleProvider()));
+
             currentProvider = providers.Dequeue();
         }
 
@@ -58,7 +62,7 @@ namespace NieRAutomataMusicTest
         {
             var read = 0;
 
-            while (read < count)
+            while (read < count && BaseSource.Position < BaseSource.Length)
             {
                 var needed = count - read;
                 var readThisTime = currentProvider.Read(buffer, read, needed);
