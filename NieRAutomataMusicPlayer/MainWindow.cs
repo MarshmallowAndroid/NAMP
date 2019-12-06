@@ -89,6 +89,23 @@ namespace NieRAutomataMusicTest
             }
         }
 
+        private void LoopCheckBox_CheckedChanged(object sender, EventArgs e)
+        {
+            if (OutputDevice.PlaybackState != PlaybackState.Stopped)
+            {
+                try
+                {
+                    foreach (var lsp in LoopSampleProviders)
+                    {
+                        lsp.Loop = loopCheckBox.Checked;
+                    }
+                }
+                catch (Exception)
+                {
+                }
+            }
+        }
+
         private void PlayButton_Click(object sender, EventArgs e)
         {
             if (OutputDevice.PlaybackState != PlaybackState.Stopped)
@@ -161,7 +178,7 @@ namespace NieRAutomataMusicTest
 
         private void Flush()
         {
-            if (VolumeSampleProviders?.Count > 0)
+            if (LoopSampleProviders?.Count > 0 || VolumeSampleProviders?.Count > 0)
             {
                 foreach (var item in LoopSampleProviders)
                 {

@@ -41,6 +41,7 @@
             this.overlayTracksPanel = new System.Windows.Forms.FlowLayoutPanel();
             this.playButton = new System.Windows.Forms.Button();
             this.fadeProgress = new System.Windows.Forms.ProgressBar();
+            this.loopCheckBox = new System.Windows.Forms.CheckBox();
             ((System.ComponentModel.ISupportInitialize)(this.playPosition)).BeginInit();
             this.SuspendLayout();
             // 
@@ -50,7 +51,7 @@
             this.musicPath.Name = "musicPath";
             this.musicPath.Size = new System.Drawing.Size(627, 20);
             this.musicPath.TabIndex = 0;
-            this.musicPath.Text = "F:\\NieRAutomata Modding\\NME2-0.5-alpha-x64\\x64\\all";
+            this.musicPath.Text = "C:\\Users\\jacob\\Desktop\\test";
             // 
             // playPosition
             // 
@@ -146,11 +147,26 @@
             this.fadeProgress.TabIndex = 9;
             this.fadeProgress.Visible = false;
             // 
+            // loopCheckBox
+            // 
+            this.loopCheckBox.AutoSize = true;
+            this.loopCheckBox.Checked = true;
+            this.loopCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.loopCheckBox.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.loopCheckBox.Location = new System.Drawing.Point(526, 199);
+            this.loopCheckBox.Name = "loopCheckBox";
+            this.loopCheckBox.Size = new System.Drawing.Size(64, 24);
+            this.loopCheckBox.TabIndex = 10;
+            this.loopCheckBox.Text = "Loop";
+            this.loopCheckBox.UseVisualStyleBackColor = true;
+            this.loopCheckBox.CheckedChanged += new System.EventHandler(this.LoopCheckBox_CheckedChanged);
+            // 
             // MainWindow
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(651, 584);
+            this.Controls.Add(this.loopCheckBox);
             this.Controls.Add(this.fadeProgress);
             this.Controls.Add(this.overlayTracksPanel);
             this.Controls.Add(this.mainTracksPanel);
@@ -187,6 +203,7 @@
         private System.Windows.Forms.FlowLayoutPanel overlayTracksPanel;
         private System.Windows.Forms.Button playButton;
         private System.Windows.Forms.ProgressBar fadeProgress;
+        private System.Windows.Forms.CheckBox loopCheckBox;
     }
 }
 
