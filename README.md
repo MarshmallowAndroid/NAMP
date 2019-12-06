@@ -20,14 +20,14 @@ No loop clicking during playback due to the new method.
 However, if ever there is any clicking of some sort then it's a bad loop point, which can be fixed by editing the mapping.
 
 ## TODO
-- [ ] Improve UI
-- [X] ~~Implement proper fade effect~~
-- [X] ~~Get rid of the occasional subtle clicking when looping~~
-- [ ] Fade when switching songs
-- [X] ~~Gimmicky pause/resume sound effect~~
-- [ ] Support for songs with other versions like Alien Manifestation
-- [ ] Rework mappings
-- [ ] Sync tracks when switching between them to avoid sounding "wrong"
+- Improve UI
+- ~~Implement proper fade effect~~
+- ~~Get rid of the occasional subtle clicking when looping~~
+- Fade when switching songs
+- ~~Gimmicky pause/resume sound effect~~
+- Support for songs with other versions like Alien Manifestation
+- Rework mappings
+- Sync tracks when switching between them to avoid sounding "wrong"
 
 ## Known issues
 - Resuming after being paused for quite a while will make the music choppy
