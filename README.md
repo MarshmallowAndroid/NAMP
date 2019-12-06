@@ -4,9 +4,9 @@ A hacky and probably unoptimized player built with [NAudio](https://github.com/n
 Plays and loops different streams together (vocals, instruments, and 8-bit versions).
 
 ## Extracting the BGM
-1. You'll need [NME2](https://github.com/TypeA2/NME2)
-2. Get all the BGM_X_XXX.wsp files from `NieRAutomata\data\sound\stream` and put them into a folder
-3. Open a prompt where NME2 is and enter
+1. You'll need [NME2](https://github.com/TypeA2/NME2).
+2. Get all the BGM_X_XXX.wsp files from `NieRAutomata\data\sound\stream` and put them into a folder.
+3. Open a prompt where NME2 is and enter:
     ```
     nme <path_to_BGM_files> -ac vorbis -aq 500k -sf fltp -p BGM*.wsp
     ```
@@ -16,8 +16,8 @@ Plays and loops different streams together (vocals, instruments, and 8-bit versi
 The [beats.txt](beats.txt) file contains the BPM and the looping points (in samples) of the tracks that I have analyzed with foobar2000 and Audacity. I'll try to find the real looping information from the game (or anywhere for that matter) but for now, this should do.
 
 ## Loop method fixed
-No loop clicking during playback due to the new method.
-However, if ever there is any clicking of some sort then it's a bad loop point, which can be fixed by editing the mapping.
+There's no more loop clicking during playback due to the new method.\
+However, if ever there is any clicking of any sort then it's just bad loop points, which can be fixed by editing the mapping.
 
 ## TODO
 - Improve UI
