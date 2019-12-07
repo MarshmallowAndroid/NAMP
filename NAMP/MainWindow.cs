@@ -115,8 +115,8 @@ namespace NAMP
         private void PauseButton_Click(object sender, EventArgs e)
         {
             WaveOut tempPlayer = new WaveOut();
-            VorbisWaveReader pauseVorbis = new VorbisWaveReader("pause.ogg");
-            VorbisWaveReader resumeVorbis = new VorbisWaveReader("resume.ogg");
+            VorbisWaveReader pauseVorbis = new VorbisWaveReader(new MemoryStream(Properties.Resources.pause));
+            VorbisWaveReader resumeVorbis = new VorbisWaveReader(new MemoryStream(Properties.Resources.resume));
 
             if (OutputDevice.PlaybackState == PlaybackState.Paused)
             {

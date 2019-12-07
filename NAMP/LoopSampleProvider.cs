@@ -18,8 +18,6 @@ namespace NAMP
         private int start;
         private int end;
 
-        private bool loopBegin = false;
-
         public LoopSampleProvider(WaveStream sourceStream, int start, int end)
         {
             SourceStream = sourceStream;
@@ -54,11 +52,7 @@ namespace NAMP
             SourceStream.Position = position;
 
             if (position > start && position < end)
-            {
                 providers.Enqueue(new OffsetSampleProvider(SourceStream.ToSampleProvider()) { TakeSamples = GetChannelMultiple(end - (int)position) * 2 });
-
-                loopBegin = true;
-            }
             else
                 providers.Enqueue(new OffsetSampleProvider(SourceStream.ToSampleProvider()));
 

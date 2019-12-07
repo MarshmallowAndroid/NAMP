@@ -59,5 +59,25 @@ namespace NAMP.Properties {
                 resourceCulture = value;
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
+        internal static byte[] pause {
+            get {
+                object obj = ResourceManager.GetObject("pause", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
+        internal static byte[] resume {
+            get {
+                object obj = ResourceManager.GetObject("resume", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
     }
 }
