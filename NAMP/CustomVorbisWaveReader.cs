@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace NieRAutomataMusicTest
+namespace NAMP
 {
     /// <summary>
     /// Modified version of <see cref="NAudio.Vorbis.VorbisWaveReader"/>.

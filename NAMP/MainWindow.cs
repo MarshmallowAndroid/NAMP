@@ -12,7 +12,7 @@ using NAudio.Wave.SampleProviders;
 using NAudio.Vorbis;
 using System.IO;
 
-namespace NieRAutomataMusicTest
+namespace NAMP
 {
     public partial class MainWindow : Form
     {
@@ -65,26 +65,21 @@ namespace NieRAutomataMusicTest
                 CustomVorbisWaveReader customVorbisWaveReader = CustomVorbisWaveReaders.First();
                 long currentPos = customVorbisWaveReader.Position;
                 long currentLength = customVorbisWaveReader.Length;
+
                 playPosition.Value = (int)((double)playPosition.Maximum * ((double)currentPos / (double)currentLength));
             }
         }
 
         private void PlayPosition_Scroll(object sender, EventArgs e)
         {
-            if (OutputDevice.PlaybackState != PlaybackState.Stopped)
+            if (LoopSampleProviders.Count > 0)
             {
-                long currentLength = LoopSampleProviders.First().BaseSource.Length;
+                long currentLength = LoopSampleProviders.First().SourceStream.Length;
                 int newPos = (int)(currentLength * ((double)playPosition.Value / (double)playPosition.Maximum));
 
-                try
+                foreach (var lsp in LoopSampleProviders)
                 {
-                    foreach (var lsp in LoopSampleProviders)
-                    {
-                        lsp.Seek(newPos);
-                    }
-                }
-                catch (Exception)
-                {
+                    lsp.Seek(newPos);
                 }
             }
         }
@@ -93,31 +88,22 @@ namespace NieRAutomataMusicTest
         {
             if (OutputDevice.PlaybackState != PlaybackState.Stopped)
             {
-                try
+                foreach (var lsp in LoopSampleProviders)
                 {
-                    foreach (var lsp in LoopSampleProviders)
-                    {
-                        lsp.Loop = loopCheckBox.Checked;
-                    }
-                }
-                catch (Exception)
-                {
+                    lsp.Loop = loopCheckBox.Checked;
                 }
             }
         }
 
         private void PlayButton_Click(object sender, EventArgs e)
         {
-            if (OutputDevice.PlaybackState != PlaybackState.Stopped)
-            {
-                string selectedSong = songList.SelectedItem?.ToString();
+            string selectedSong = songList.SelectedItem?.ToString();
 
-                OutputDevice.Stop();
-                OutputDevice.Dispose();
+            OutputDevice.Stop();
+            OutputDevice.Dispose();
 
-                InitPlayer(selectedSong);
-                InitVolumes();
-            }
+            InitPlayer(selectedSong);
+            InitVolumes();
 
             if (MixingSampleProvider != null)
             {
@@ -182,7 +168,7 @@ namespace NieRAutomataMusicTest
             {
                 foreach (var item in LoopSampleProviders)
                 {
-                    item.BaseSource.Dispose();
+                    item.SourceStream.Dispose();
                 }
 
                 foreach (var item in CustomVorbisWaveReaders)
@@ -380,10 +366,11 @@ namespace NieRAutomataMusicTest
 
         private void OverlayRadioButton_CheckedChanged(object sender, EventArgs e)
         {
-            RadioButton checkBox = (RadioButton)sender;
-            string selectedTrack = checkBox.Name;
+            RadioButton radioButton = (RadioButton)sender;
+            string selectedTrack = radioButton.Name;
 
             float speed = fadeSpeed;
+
             Timer timer = new Timer()
             {
                 Interval = fadeInterval
@@ -394,11 +381,12 @@ namespace NieRAutomataMusicTest
             foreach (var item in VolumeSampleProviders)
             {
                 var vsp = item.Value;
+
                 if (item.Key == selectedTrack)
                     fade = vsp;
             }
 
-            if (!checkBox.Checked)
+            if (!radioButton.Checked)
             {
                 fade.Volume = 1.0f;
                 timer.Tick += (sndr, evt) =>
@@ -433,6 +421,7 @@ namespace NieRAutomataMusicTest
             RadioButton radioButton = (RadioButton)sender;
 
             float speed = fadeSpeed;
+
             Timer timer = new Timer()
             {
                 Interval = fadeInterval
@@ -479,6 +468,7 @@ namespace NieRAutomataMusicTest
                 string selectedTrack = radioButton.Name;
 
                 float speed = fadeSpeed;
+
                 Timer timer = new Timer()
                 {
                     Interval = fadeInterval
@@ -490,6 +480,7 @@ namespace NieRAutomataMusicTest
                 foreach (var item in VolumeSampleProviders)
                 {
                     var vsp = item.Value;
+
                     if (item.Key.StartsWith("ins"))
                     {
                         if (item.Key == selectedTrack)

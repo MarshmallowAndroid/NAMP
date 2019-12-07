@@ -1,4 +1,4 @@
-﻿namespace NieRAutomataMusicTest
+﻿namespace NAMP
 {
     partial class MainWindow
     {
@@ -51,7 +51,7 @@
             this.musicPath.Name = "musicPath";
             this.musicPath.Size = new System.Drawing.Size(627, 20);
             this.musicPath.TabIndex = 0;
-            this.musicPath.Text = "C:\\Users\\jacob\\Desktop\\test";
+            this.musicPath.Text = "F:\\NieRAutomata Modding\\all";
             // 
             // playPosition
             // 

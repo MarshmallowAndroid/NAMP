@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("NieRAutomataMusicTest")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("NAMP")]
+[assembly: AssemblyDescription("NieR:Automata™ Music Player")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("NieRAutomataMusicTest")]
+[assembly: AssemblyProduct("NAMP")]
 [assembly: AssemblyCopyright("Copyright ©  2019")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
