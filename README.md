@@ -12,8 +12,8 @@ Plays and loops different streams together (vocals, instruments, and 8-bit versi
     ```
 4. Use [names.txt](names.txt) as a guide for the output files.
 
-## Beats info
-The [beats.txt](beats.txt) file contains the BPM and the looping points (in samples) of the tracks that I have analyzed with foobar2000 and Audacity. I'll try to find the real looping information from the game (or anywhere for that matter) but for now, this should do.
+## Mapping info
+The [mapping.txt](mapping.txt) file contains the looping points (in samples) of each track, as well as which file corresponds to each track.
 
 ## Loop method fixed
 There's no more loop clicking during playback due to the new method.\
@@ -30,4 +30,4 @@ However, if ever there is any clicking of any sort then it's just bad loop point
 - Sync tracks when switching between them to avoid sounding "wrong"
 
 ## Known issues
-- Resuming after being paused for quite a while will make the music choppy
+- After seeking, the next loop will click.
