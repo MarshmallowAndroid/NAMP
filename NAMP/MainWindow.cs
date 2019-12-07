@@ -79,7 +79,7 @@ namespace NAMP
 
                 foreach (var lsp in LoopSampleProviders)
                 {
-                    lsp.Seek(newPos);
+                    lsp.Seek(newPos - (newPos % lsp.WaveFormat.Channels));
                 }
             }
         }

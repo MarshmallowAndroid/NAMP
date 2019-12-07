@@ -67,7 +67,7 @@ namespace NAMP
 
         private int GetChannelMultiple(int value)
         {
-            return value - (value % 2);
+            return value - (value % WaveFormat.Channels);
         }
 
         public int Read(float[] buffer, int offset, int count)
@@ -85,33 +85,31 @@ namespace NAMP
 
                 if (readThisTime == 0)
                 {
-                    Console.WriteLine(loopBegin);
-
-                    if (Loop && loopBegin)
+                    if (Loop)
                     {
-                        //Console.WriteLine("Loop.");
+                        Console.WriteLine("Loop.");
 
                         if (SourceStream.Position > start)
                             SourceStream.Position = start;
 
-                        providers.Enqueue(new OffsetSampleProvider(SourceStream.ToSampleProvider()) { TakeSamples = GetChannelMultiple((end - start) + (int)SourceStream.Position) * 2 });
+                        providers.Enqueue(new OffsetSampleProvider(SourceStream.ToSampleProvider())
+                        {
+                            TakeSamples = GetChannelMultiple(end - start) * 2
+                        });
+
                         currentProvider = providers.Dequeue();
                     }
                     else
                     {
-                        //Console.WriteLine("End.");
+                        Console.WriteLine("End.");
 
                         if (SourceStream.Position > end)
                             SourceStream.Position = end;
 
                         providers.Enqueue(new OffsetSampleProvider(SourceStream.ToSampleProvider()));
+
                         currentProvider = providers.Dequeue();
                     }
-
-                    if (Loop)
-                        loopBegin = true;
-                    else
-                        loopBegin = false;
                 }
             }
 
