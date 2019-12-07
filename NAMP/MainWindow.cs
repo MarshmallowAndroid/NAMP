@@ -16,7 +16,7 @@ namespace NAMP
 {
     public partial class MainWindow : Form
     {
-        WaveOut OutputDevice = new WaveOut();
+        DirectSoundOut OutputDevice = new DirectSoundOut();
 
         List<CustomVorbisWaveReader> CustomVorbisWaveReaders;
         List<LoopSampleProvider> LoopSampleProviders;
@@ -29,6 +29,8 @@ namespace NAMP
         float fadeSpeed = 0.0075f;
         int fadeInterval = 16;
 
+        float sfxVolume = 2.0f;
+
         string mapLocation = @"mapping.txt";
 
         public MainWindow()
@@ -39,6 +41,63 @@ namespace NAMP
             OutputDevice.PlaybackStopped += (sndr, evt) =>
             {
                 Flush();
+            };
+
+            playButton.MouseEnter += MouseEnterSound;
+            playButton.MouseDown += MouseDownSound;
+
+            loopCheckBox.MouseEnter += MouseEnterSound;
+            loopCheckBox.MouseDown += MouseDownSound2;
+
+            pauseButton.MouseEnter += MouseEnterSound;
+            pauseButton.MouseDown += MouseDownSound;
+        }
+
+        void MouseEnterSound(object sender, EventArgs e)
+        {
+            DirectSoundOut tempPlayer = new DirectSoundOut();
+            VorbisWaveReader hover = new VorbisWaveReader(new MemoryStream(Properties.Resources.select));
+
+            tempPlayer.Init(new VolumeSampleProvider(hover) { Volume = sfxVolume });
+            tempPlayer.Play();
+
+            tempPlayer.PlaybackStopped += (snd, evt) =>
+            {
+                tempPlayer.Dispose();
+                hover.Dispose();
+                hover.Dispose();
+            };
+        }
+
+        void MouseDownSound(object sender, EventArgs e)
+        {
+            DirectSoundOut tempPlayer = new DirectSoundOut();
+            VorbisWaveReader hover = new VorbisWaveReader(new MemoryStream(Properties.Resources.chosen));
+
+            tempPlayer.Init(new VolumeSampleProvider(hover) { Volume = sfxVolume });
+            tempPlayer.Play();
+
+            tempPlayer.PlaybackStopped += (snd, evt) =>
+            {
+                tempPlayer.Dispose();
+                hover.Dispose();
+                hover.Dispose();
+            };
+        }
+
+        void MouseDownSound2(object sender, EventArgs e)
+        {
+            DirectSoundOut tempPlayer = new DirectSoundOut();
+            VorbisWaveReader hover = new VorbisWaveReader(new MemoryStream(Properties.Resources.chosen2));
+
+            tempPlayer.Init(new VolumeSampleProvider(hover) { Volume = sfxVolume });
+            tempPlayer.Play();
+
+            tempPlayer.PlaybackStopped += (snd, evt) =>
+            {
+                tempPlayer.Dispose();
+                hover.Dispose();
+                hover.Dispose();
             };
         }
 
@@ -74,12 +133,18 @@ namespace NAMP
         {
             if (LoopSampleProviders.Count > 0)
             {
-                long currentLength = LoopSampleProviders.First().SourceStream.Length;
-                int newPos = (int)(currentLength * ((double)playPosition.Value / (double)playPosition.Maximum));
-
-                foreach (var lsp in LoopSampleProviders)
+                try
                 {
-                    lsp.Seek(newPos - (newPos % lsp.WaveFormat.Channels));
+                    long currentLength = LoopSampleProviders.First().SourceStream.Length;
+                    int newPos = (int)(currentLength * ((double)playPosition.Value / (double)playPosition.Maximum));
+
+                    foreach (var lsp in LoopSampleProviders)
+                    {
+                        lsp.Seek(newPos - (newPos % lsp.WaveFormat.Channels));
+                    }
+                }
+                catch (Exception)
+                {
                 }
             }
         }
@@ -114,7 +179,7 @@ namespace NAMP
 
         private void PauseButton_Click(object sender, EventArgs e)
         {
-            WaveOut tempPlayer = new WaveOut();
+            DirectSoundOut tempPlayer = new DirectSoundOut();
             VorbisWaveReader pauseVorbis = new VorbisWaveReader(new MemoryStream(Properties.Resources.pause));
             VorbisWaveReader resumeVorbis = new VorbisWaveReader(new MemoryStream(Properties.Resources.resume));
 
@@ -124,7 +189,7 @@ namespace NAMP
 
                 pauseButton.Text = "Pause";
 
-                tempPlayer.Init(resumeVorbis);
+                tempPlayer.Init(new VolumeSampleProvider(resumeVorbis) { Volume = sfxVolume });
                 tempPlayer.Play();
 
                 tempPlayer.PlaybackStopped += (snd, evt) =>
@@ -136,6 +201,7 @@ namespace NAMP
                     OutputDevice.Play();
 
                     pauseButton.Enabled = true;
+                    playPosition.Enabled = true;
                 };
 
             }
@@ -145,7 +211,7 @@ namespace NAMP
 
                 pauseButton.Text = "Resume";
 
-                tempPlayer.Init(pauseVorbis);
+                tempPlayer.Init(new VolumeSampleProvider(pauseVorbis) { Volume = sfxVolume });
                 tempPlayer.Play();
 
                 tempPlayer.PlaybackStopped += (snd, evt) =>
@@ -158,8 +224,9 @@ namespace NAMP
                 };
 
                 OutputDevice.Pause();
-            }
 
+                playPosition.Enabled = false;
+            }
         }
 
         private void Flush()
@@ -201,7 +268,7 @@ namespace NAMP
 
                 CustomVorbisWaveReaders.Add(new CustomVorbisWaveReader(musicDirectory + trackFile));
 
-                Console.WriteLine("Add LoopStream for song " + songName + " track " + track + ".");
+                Console.WriteLine("Add LoopSampleProvider for song \"" + songName + "\", track " + track + ".");
 
                 LoopSampleProviders.Add(new LoopSampleProvider(CustomVorbisWaveReaders.Last(), loopStart, loopEnd) { Loop = true });
                 VolumeSampleProviders.Add(new KeyValuePair<string, VolumeSampleProvider>(track, new VolumeSampleProvider(LoopSampleProviders.Last())));

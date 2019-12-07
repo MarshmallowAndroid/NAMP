@@ -52,7 +52,10 @@ namespace NAMP
             SourceStream.Position = position;
 
             if (position > start && position < end)
-                providers.Enqueue(new OffsetSampleProvider(SourceStream.ToSampleProvider()) { TakeSamples = GetChannelMultiple(end - (int)position) * 2 });
+                providers.Enqueue(new OffsetSampleProvider(SourceStream.ToSampleProvider())
+                {
+                    TakeSamples = GetChannelMultiple(end - (int)position) * 2
+                });
             else
                 providers.Enqueue(new OffsetSampleProvider(SourceStream.ToSampleProvider()));
 

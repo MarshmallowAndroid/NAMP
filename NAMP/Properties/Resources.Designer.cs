@@ -63,6 +63,26 @@ namespace NAMP.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Byte[].
         /// </summary>
+        internal static byte[] chosen {
+            get {
+                object obj = ResourceManager.GetObject("chosen", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
+        internal static byte[] chosen2 {
+            get {
+                object obj = ResourceManager.GetObject("chosen2", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
         internal static byte[] pause {
             get {
                 object obj = ResourceManager.GetObject("pause", resourceCulture);
@@ -76,6 +96,16 @@ namespace NAMP.Properties {
         internal static byte[] resume {
             get {
                 object obj = ResourceManager.GetObject("resume", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
+        internal static byte[] select {
+            get {
+                object obj = ResourceManager.GetObject("select", resourceCulture);
                 return ((byte[])(obj));
             }
         }

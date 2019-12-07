@@ -129,6 +129,15 @@
   <ItemGroup>
     <None Include="Resources\resume.ogg" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\chosen.ogg" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\select.ogg" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\chosen2.ogg" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PreBuildEvent>
