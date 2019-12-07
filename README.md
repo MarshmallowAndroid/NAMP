@@ -30,4 +30,4 @@ However, if ever there is any clicking of any sort then it's just bad loop point
 - Sync tracks when switching between them to avoid sounding "wrong"
 
 ## Known issues
-- Resuming after being paused for quite a while will make the music choppy
+- After seeking, the next loop will click.
