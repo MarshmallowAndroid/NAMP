@@ -83,6 +83,16 @@ namespace NAMP.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Byte[].
         /// </summary>
+        internal static byte[] invalid {
+            get {
+                object obj = ResourceManager.GetObject("invalid", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
         internal static byte[] pause {
             get {
                 object obj = ResourceManager.GetObject("pause", resourceCulture);

@@ -23,12 +23,12 @@ namespace NAMP
             SourceStream = sourceStream;
             providers = new Queue<ISampleProvider>();
 
-            providers.Enqueue(new OffsetSampleProvider(sourceStream.ToSampleProvider())
+            providers.Enqueue(new OffsetSampleProvider(SourceStream.ToSampleProvider())
             {
                 TakeSamples = GetChannelMultiple(start) * 2
             });
 
-            providers.Enqueue(new OffsetSampleProvider(sourceStream.ToSampleProvider())
+            providers.Enqueue(new OffsetSampleProvider(SourceStream.ToSampleProvider())
             {
                 TakeSamples = GetChannelMultiple(end - start) * 2
             });
@@ -41,11 +41,11 @@ namespace NAMP
 
         public WaveStream SourceStream { get; private set; }
 
-        public WaveFormat WaveFormat => SourceStream.WaveFormat;
+        public WaveFormat WaveFormat => SourceStream?.WaveFormat;
 
         public bool Loop { get; set; }
 
-        public void Seek(int position)
+        public void Seek(long position)
         {
             providers.Clear();
 
@@ -69,14 +69,14 @@ namespace NAMP
 
         public int Read(float[] buffer, int offset, int count)
         {
-            var read = 0;
+            int read = 0;
 
             while (read < count
                 && (Loop ? SourceStream.Position <= SourceStream.Length
                 : SourceStream.Position < SourceStream.Length))
             {
-                var needed = count - read;
-                var readThisTime = currentProvider.Read(buffer, read, needed);
+                int needed = count - read;
+                int readThisTime = currentProvider.Read(buffer, read, needed);
 
                 read += readThisTime;
 
@@ -84,7 +84,7 @@ namespace NAMP
                 {
                     if (Loop)
                     {
-                        Console.WriteLine("Loop.");
+                        Console.WriteLine("Start of queued SampleProvider.");
 
                         if (SourceStream.Position > start)
                             SourceStream.Position = start;
@@ -98,7 +98,7 @@ namespace NAMP
                     }
                     else
                     {
-                        Console.WriteLine("End.");
+                        Console.WriteLine("End of queued SampleProvider.");
 
                         if (SourceStream.Position > end)
                             SourceStream.Position = end;

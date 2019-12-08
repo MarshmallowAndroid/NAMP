@@ -16,7 +16,8 @@ namespace NAMP
 {
     public partial class MainWindow : Form
     {
-        DirectSoundOut OutputDevice = new DirectSoundOut();
+        WaveOut OutputDevice = new WaveOut() { DesiredLatency = 100 };
+        SfxPlayer SfxPlayer = new SfxPlayer();
 
         List<CustomVorbisWaveReader> CustomVorbisWaveReaders;
         List<LoopSampleProvider> LoopSampleProviders;
@@ -33,18 +34,19 @@ namespace NAMP
 
         string mapLocation = @"mapping.txt";
 
+        MusicPlayer Player;
+
         public MainWindow()
         {
             InitializeComponent();
 
-            // OutputDevice.DesiredLatency = 100;
-            OutputDevice.PlaybackStopped += (sndr, evt) =>
-            {
-                Flush();
-            };
+            Player = new MusicPlayer(musicPath.Text);
+
+            Player.SetLoop(loopCheckBox.Checked);
+
+            SfxPlayer.Volume = sfxVolume;
 
             playButton.MouseEnter += MouseEnterSound;
-            playButton.MouseDown += MouseDownSound;
 
             loopCheckBox.MouseEnter += MouseEnterSound;
             loopCheckBox.MouseDown += MouseDownSound2;
@@ -53,58 +55,24 @@ namespace NAMP
             pauseButton.MouseDown += MouseDownSound;
         }
 
-        void MouseEnterSound(object sender, EventArgs e)
+        private void MouseEnterSound(object sender, EventArgs e)
         {
-            DirectSoundOut tempPlayer = new DirectSoundOut();
-            VorbisWaveReader hover = new VorbisWaveReader(new MemoryStream(Properties.Resources.select));
-
-            tempPlayer.Init(new VolumeSampleProvider(hover) { Volume = sfxVolume });
-            tempPlayer.Play();
-
-            tempPlayer.PlaybackStopped += (snd, evt) =>
-            {
-                tempPlayer.Dispose();
-                hover.Dispose();
-                hover.Dispose();
-            };
+            SfxPlayer.PlaySfx(new MemoryStream(Properties.Resources.select));
         }
 
-        void MouseDownSound(object sender, EventArgs e)
+        private void MouseDownSound(object sender, EventArgs e)
         {
-            DirectSoundOut tempPlayer = new DirectSoundOut();
-            VorbisWaveReader hover = new VorbisWaveReader(new MemoryStream(Properties.Resources.chosen));
-
-            tempPlayer.Init(new VolumeSampleProvider(hover) { Volume = sfxVolume });
-            tempPlayer.Play();
-
-            tempPlayer.PlaybackStopped += (snd, evt) =>
-            {
-                tempPlayer.Dispose();
-                hover.Dispose();
-                hover.Dispose();
-            };
+            SfxPlayer.PlaySfx(new MemoryStream(Properties.Resources.chosen));
         }
 
-        void MouseDownSound2(object sender, EventArgs e)
+        private void MouseDownSound2(object sender, EventArgs e)
         {
-            DirectSoundOut tempPlayer = new DirectSoundOut();
-            VorbisWaveReader hover = new VorbisWaveReader(new MemoryStream(Properties.Resources.chosen2));
-
-            tempPlayer.Init(new VolumeSampleProvider(hover) { Volume = sfxVolume });
-            tempPlayer.Play();
-
-            tempPlayer.PlaybackStopped += (snd, evt) =>
-            {
-                tempPlayer.Dispose();
-                hover.Dispose();
-                hover.Dispose();
-            };
+            SfxPlayer.PlaySfx(new MemoryStream(Properties.Resources.chosen2));
         }
 
-        private void MainWindow_FormClosing(object sender, FormClosingEventArgs e)
+        private void MouseDownSoundInvalid(object sender, EventArgs e)
         {
-            OutputDevice?.Stop();
-            OutputDevice?.Dispose();
+            SfxPlayer.PlaySfx(new MemoryStream(Properties.Resources.invalid));
         }
 
         private void MainWindow_Load(object sender, EventArgs e)
@@ -119,212 +87,56 @@ namespace NAMP
 
         private void PositionUpdate_Tick(object sender, EventArgs e)
         {
-            if (OutputDevice.PlaybackState != PlaybackState.Stopped)
-            {
-                CustomVorbisWaveReader customVorbisWaveReader = CustomVorbisWaveReaders.First();
-                long currentPos = customVorbisWaveReader.Position;
-                long currentLength = customVorbisWaveReader.Length;
+            long position = Player.GetPlaybackPosition();
+            long length = Player.GetPlaybackLength();
 
-                playPosition.Value = (int)((double)playPosition.Maximum * ((double)currentPos / (double)currentLength));
-            }
+            if (length > 0)
+                playPosition.Value = (int)((double)playPosition.Maximum * ((double)position / (double)length));
         }
 
         private void PlayPosition_Scroll(object sender, EventArgs e)
         {
-            if (LoopSampleProviders.Count > 0)
-            {
-                try
-                {
-                    long currentLength = LoopSampleProviders.First().SourceStream.Length;
-                    int newPos = (int)(currentLength * ((double)playPosition.Value / (double)playPosition.Maximum));
+            long length = Player.GetPlaybackLength();
+            int newPos = (int)(length * ((double)playPosition.Value / (double)playPosition.Maximum));
 
-                    foreach (var lsp in LoopSampleProviders)
-                    {
-                        lsp.Seek(newPos - (newPos % lsp.WaveFormat.Channels));
-                    }
-                }
-                catch (Exception)
-                {
-                }
-            }
+            if (length > 0)
+                Player.SetPlaybackPosition(newPos);
         }
 
         private void LoopCheckBox_CheckedChanged(object sender, EventArgs e)
         {
-            if (OutputDevice.PlaybackState != PlaybackState.Stopped)
-            {
-                foreach (var lsp in LoopSampleProviders)
-                {
-                    lsp.Loop = loopCheckBox.Checked;
-                }
-            }
+            Player.SetLoop(loopCheckBox.Checked);
         }
 
         private void PlayButton_Click(object sender, EventArgs e)
         {
-            string selectedSong = songList.SelectedItem?.ToString();
+            RadioButton mainTrack = null;
+            RadioButton overlayTrack = null;
 
-            OutputDevice.Stop();
-            OutputDevice.Dispose();
-
-            InitPlayer(selectedSong);
-            InitVolumes();
-
-            if (MixingSampleProvider != null)
+            foreach (RadioButton item in mainTracksPanel.Controls)
             {
-                OutputDevice.Init(MixingSampleProvider);
-                OutputDevice.Play();
+                if (item.Checked) mainTrack = item;
+            }
+
+            foreach (RadioButton item in overlayTracksPanel.Controls)
+            {
+                if (item.Checked) overlayTrack = item;
+            }
+
+            if (mainTrack != null)
+            {
+                MouseDownSound(sender, e);
+                Player.Play(mainTrack.Name, overlayTrack?.Name);
+            }
+            else
+            {
+                MouseDownSoundInvalid(sender, e);
             }
         }
 
         private void PauseButton_Click(object sender, EventArgs e)
         {
-            DirectSoundOut tempPlayer = new DirectSoundOut();
-            VorbisWaveReader pauseVorbis = new VorbisWaveReader(new MemoryStream(Properties.Resources.pause));
-            VorbisWaveReader resumeVorbis = new VorbisWaveReader(new MemoryStream(Properties.Resources.resume));
-
-            if (OutputDevice.PlaybackState == PlaybackState.Paused)
-            {
-                pauseButton.Enabled = false;
-
-                pauseButton.Text = "Pause";
-
-                tempPlayer.Init(new VolumeSampleProvider(resumeVorbis) { Volume = sfxVolume });
-                tempPlayer.Play();
-
-                tempPlayer.PlaybackStopped += (snd, evt) =>
-                {
-                    tempPlayer.Dispose();
-                    pauseVorbis.Dispose();
-                    resumeVorbis.Dispose();
-
-                    OutputDevice.Play();
-
-                    pauseButton.Enabled = true;
-                    playPosition.Enabled = true;
-                };
-
-            }
-            else
-            {
-                pauseButton.Enabled = false;
-
-                pauseButton.Text = "Resume";
-
-                tempPlayer.Init(new VolumeSampleProvider(pauseVorbis) { Volume = sfxVolume });
-                tempPlayer.Play();
-
-                tempPlayer.PlaybackStopped += (snd, evt) =>
-                {
-                    tempPlayer.Dispose();
-                    pauseVorbis.Dispose();
-                    resumeVorbis.Dispose();
-
-                    pauseButton.Enabled = true;
-                };
-
-                OutputDevice.Pause();
-
-                playPosition.Enabled = false;
-            }
-        }
-
-        private void Flush()
-        {
-            if (LoopSampleProviders?.Count > 0 || VolumeSampleProviders?.Count > 0)
-            {
-                foreach (var item in LoopSampleProviders)
-                {
-                    item.SourceStream.Dispose();
-                }
-
-                foreach (var item in CustomVorbisWaveReaders)
-                {
-                    item.Dispose();
-                }
-            }
-        }
-
-        private void InitPlayer(string songName)
-        {
-            MapReader = new FileMapReader(mapLocation);
-
-            OutputDevice.Stop();
-
-            bool isMSPInit = false;
-            string[] tracks = MapReader.GetAvailableTracks(songName);
-
-            string musicDirectory = musicPath.Text + "\\";
-
-            CustomVorbisWaveReaders = new List<CustomVorbisWaveReader>();
-            LoopSampleProviders = new List<LoopSampleProvider>();
-            VolumeSampleProviders = new List<KeyValuePair<string, VolumeSampleProvider>>();
-
-            foreach (var track in tracks)
-            {
-                string trackFile = MapReader.GetValue(songName, track);
-                int loopStart = int.Parse(MapReader.GetValue(songName, "loop_start"));
-                int loopEnd = int.Parse(MapReader.GetValue(songName, "loop_end"));
-
-                CustomVorbisWaveReaders.Add(new CustomVorbisWaveReader(musicDirectory + trackFile));
-
-                Console.WriteLine("Add LoopSampleProvider for song \"" + songName + "\", track " + track + ".");
-
-                LoopSampleProviders.Add(new LoopSampleProvider(CustomVorbisWaveReaders.Last(), loopStart, loopEnd) { Loop = true });
-                VolumeSampleProviders.Add(new KeyValuePair<string, VolumeSampleProvider>(track, new VolumeSampleProvider(LoopSampleProviders.Last())));
-
-                if (!isMSPInit)
-                {
-                    MixingSampleProvider = new MixingSampleProvider(CustomVorbisWaveReaders.First().WaveFormat);
-                    isMSPInit = true;
-                }
-
-                MixingSampleProvider.AddMixerInput(VolumeSampleProviders.Last().Value);
-            }
-
-            MapReader.Dispose();
-        }
-
-        private void InitVolumes()
-        {
-            RadioButton initialMainTrack = null;
-            RadioButton initialOverlayTrack = null;
-
-            foreach (RadioButton control in mainTracksPanel.Controls)
-            {
-                if (control.Checked)
-                    initialMainTrack = control;
-            }
-
-            foreach (RadioButton control in overlayTracksPanel.Controls)
-            {
-                if (control.Checked)
-                    initialOverlayTrack = control;
-            }
-
-            foreach (var vsp in VolumeSampleProviders)
-            {
-                if (vsp.Key.StartsWith("ins"))
-                {
-                    if (vsp.Key == initialMainTrack.Name)
-                        vsp.Value.Volume = 1.0f;
-                    else
-                        vsp.Value.Volume = 0.0f;
-                }
-
-                if (initialOverlayTrack != null)
-                {
-                    if (vsp.Key.StartsWith("voc"))
-                    {
-                        if (vsp.Key == initialOverlayTrack.Name)
-                            vsp.Value.Volume = 1.0f;
-                        else
-                            vsp.Value.Volume = 0.0f;
-                    }
-                }
-            }
-
-            PositionUpdate.Enabled = true;
+            Player.Pause();
         }
 
         private void SongList_SelectedIndexChanged(object sender, EventArgs e)
@@ -416,13 +228,12 @@ namespace NAMP
                     }
                 }
 
-                ((RadioButton)mainTracksPanel.Controls[0]).Checked = true;
+                Player.InitPlayer(selectedSong);
 
-                if (overlayTracksPanel.Controls.Count > 0)
-                    ((RadioButton)overlayTracksPanel.Controls[0]).Checked = true;
+                //((RadioButton)mainTracksPanel.Controls[0]).Checked = true;
 
-                //InitPlayer(selectedSong);
-                InitVolumes();
+                //if (overlayTracksPanel.Controls.Count > 0)
+                //    ((RadioButton)overlayTracksPanel.Controls[0]).Checked = true;
 
                 trackList.Sorting = SortOrder.Ascending;
                 trackList.Sort();
@@ -436,166 +247,20 @@ namespace NAMP
             RadioButton radioButton = (RadioButton)sender;
             string selectedTrack = radioButton.Name;
 
-            float speed = fadeSpeed;
-
-            Timer timer = new Timer()
-            {
-                Interval = fadeInterval
-            };
-
-            VolumeSampleProvider fade = null;
-
-            foreach (var item in VolumeSampleProviders)
-            {
-                var vsp = item.Value;
-
-                if (item.Key == selectedTrack)
-                    fade = vsp;
-            }
-
-            if (!radioButton.Checked)
-            {
-                fade.Volume = 1.0f;
-                timer.Tick += (sndr, evt) =>
-                {
-                    fade.Volume -= speed;
-                    if (fade.Volume <= 0.0f)
-                    {
-                        fade.Volume = 0.0f;
-                        timer.Enabled = false;
-                    }
-                };
-            }
-            else
-            {
-                fade.Volume = 0.0f;
-                timer.Tick += (sndr, evt) =>
-                {
-                    fade.Volume += speed;
-                    if (fade.Volume >= 1.0f)
-                    {
-                        fade.Volume = 1.0f;
-                        timer.Enabled = false;
-                    }
-                };
-            }
-
-            timer.Enabled = true;
+            Player.FadeTrackTo(MusicPlayer.FadeTrack.Overlay, selectedTrack);
         }
 
         private void NoneRadioButton_CheckedChanged(object sender, EventArgs e)
         {
-            RadioButton radioButton = (RadioButton)sender;
-
-            float speed = fadeSpeed;
-
-            Timer timer = new Timer()
-            {
-                Interval = fadeInterval
-            };
-
-            VolumeSampleProvider fade = null;
-
-            foreach (var vsp in VolumeSampleProviders)
-            {
-                if (vsp.Key.StartsWith("voc"))
-                {
-                    if (vsp.Value.Volume > 0.0f)
-                        fade = vsp.Value;
-                }
-            }
-
-            if (fade != null)
-            {
-                if (radioButton.Checked)
-                {
-                    fade.Volume = 1.0f;
-                    timer.Tick += (sndr, evt) =>
-                    {
-                        fade.Volume -= speed;
-                        if (fade.Volume <= 0.0f)
-                        {
-                            fade.Volume = 0.0f;
-                            timer.Enabled = false;
-                        }
-                    };
-                }
-
-                timer.Enabled = true;
-            }
+            Player.FadeTrackTo(MusicPlayer.FadeTrack.Overlay, "");
         }
 
         private void TrackRadioButton_CheckedChanged(object sender, EventArgs e)
         {
-            string selectedSong = songList.SelectedItem?.ToString();
+            RadioButton radioButton = (RadioButton)sender;
+            string selectedTrack = radioButton.Name;
 
-            if (OutputDevice.PlaybackState == PlaybackState.Playing || OutputDevice.PlaybackState == PlaybackState.Paused)
-            {
-                RadioButton radioButton = (RadioButton)sender;
-                string selectedTrack = radioButton.Name;
-
-                float speed = fadeSpeed;
-
-                Timer timer = new Timer()
-                {
-                    Interval = fadeInterval
-                };
-
-                VolumeSampleProvider fadeIn = null;
-                VolumeSampleProvider fadeOut = null;
-
-                foreach (var item in VolumeSampleProviders)
-                {
-                    var vsp = item.Value;
-
-                    if (item.Key.StartsWith("ins"))
-                    {
-                        if (item.Key == selectedTrack)
-                            fadeIn = vsp;
-
-                        if (vsp.Volume > 0.0f)
-                            fadeOut = vsp;
-                    }
-                }
-
-                if (fadeIn != null)
-                    fadeIn.Volume = 0.0f;
-
-                if (fadeOut != null)
-                    fadeOut.Volume = 1.0f;
-
-                timer.Tick += (sndr, evt) =>
-                {
-                    fadeOut.Volume -= speed;
-                    fadeIn.Volume += speed;
-
-                    fadeProgress.Value = Math.Max((int)(fadeOut.Volume * 100.0f), 0);
-
-                    if (fadeOut.Volume <= 0.0f)
-                    {
-                        fadeIn.Volume = 1.0f;
-                        fadeOut.Volume = 0.0f;
-
-                        fadeProgress.Visible = false;
-                        timer.Enabled = false;
-                    }
-                };
-
-                if (OutputDevice.PlaybackState != PlaybackState.Stopped)
-                {
-                    fadeProgress.Visible = true;
-                }
-
-                if (fadeIn != null && fadeOut != null)
-                {
-                    timer.Enabled = true;
-                }
-            }
-            else
-            {
-                InitPlayer(selectedSong);
-                InitVolumes();
-            }
+            Player.FadeTrackTo(MusicPlayer.FadeTrack.Main, selectedTrack);
         }
     }
 }

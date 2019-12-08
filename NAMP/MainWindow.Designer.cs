@@ -65,6 +65,8 @@
             // 
             // PositionUpdate
             // 
+            this.PositionUpdate.Enabled = true;
+            this.PositionUpdate.Interval = 1;
             this.PositionUpdate.Tick += new System.EventHandler(this.PositionUpdate_Tick);
             // 
             // pauseButton
@@ -176,12 +178,12 @@
             this.Controls.Add(this.pauseButton);
             this.Controls.Add(this.playPosition);
             this.Controls.Add(this.musicPath);
+            this.DoubleBuffered = true;
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.MaximizeBox = false;
             this.Name = "MainWindow";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "NieR:Automata Music Player";
-            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainWindow_FormClosing);
             this.Load += new System.EventHandler(this.MainWindow_Load);
             ((System.ComponentModel.ISupportInitialize)(this.playPosition)).EndInit();
             this.ResumeLayout(false);

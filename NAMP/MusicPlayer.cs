@@ -1,0 +1,314 @@
+﻿using NAudio.Vorbis;
+using NAudio.Wave;
+using NAudio.Wave.SampleProviders;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Timers;
+
+namespace NAMP
+{
+    class MusicPlayer
+    {
+        private WaveOut outputDevice = new WaveOut() { DesiredLatency = 100 };
+        private List<CustomVorbisWaveReader> readers;
+        private List<LoopSampleProvider> loopSampleProviders;
+        private List<KeyValuePair<string, VolumeSampleProvider>> volumeSampleProviders;
+
+        private MixingSampleProvider MixingSampleProvider;
+
+        private FileMapReader MapReader;
+
+        private VorbisWaveReader pauseVorbis = new VorbisWaveReader(new MemoryStream(Properties.Resources.pause));
+        private VorbisWaveReader resumeVorbis = new VorbisWaveReader(new MemoryStream(Properties.Resources.resume));
+
+        float sfxVolume = 2.0f;
+
+        float fadeSpeed = 0.0075f;
+        int fadeInterval = 16;
+
+        string mapLocation = @"mapping.txt";
+        string songDirectory = "";
+
+        string currentSong = "";
+
+        public MusicPlayer(string songDirectory)
+        {
+            this.songDirectory = songDirectory;
+        }
+
+        public bool Loop { get; set; }
+
+        public float CurrentFadeVolume { get; private set; }
+
+        public enum FadeTrack
+        {
+            Main,
+            Overlay
+        }
+
+        public void Play(string trackName, string overlayName = "")
+        {
+            if (outputDevice.PlaybackState != PlaybackState.Stopped)
+            {
+                outputDevice.Stop();
+                outputDevice.Dispose();
+
+                InitPlayer(currentSong);
+            }
+
+            InitVolumes(trackName, overlayName);
+
+            if (MixingSampleProvider != null)
+            {
+                outputDevice.Init(MixingSampleProvider);
+                outputDevice.Play();
+            }
+        }
+
+        public void Pause()
+        {
+            WaveOut tempPlayer = new WaveOut() { DesiredLatency = 100 };
+
+            if (outputDevice.PlaybackState == PlaybackState.Paused)
+            {
+                tempPlayer.Init(new VolumeSampleProvider(resumeVorbis) { Volume = sfxVolume });
+                tempPlayer.Play();
+
+                tempPlayer.PlaybackStopped += (snd, evt) =>
+                {
+                    tempPlayer.Dispose();
+
+                    outputDevice.Play();
+                };
+
+            }
+            else
+            {
+                tempPlayer.Init(new VolumeSampleProvider(pauseVorbis) { Volume = sfxVolume });
+                tempPlayer.Play();
+
+                tempPlayer.PlaybackStopped += (snd, evt) =>
+                {
+                    tempPlayer.Dispose();
+                };
+
+                outputDevice.Pause();
+            }
+        }
+
+        public void Stop()
+        {
+            outputDevice.Stop();
+        }
+
+        public void InitPlayer(string songName)
+        {
+            outputDevice.Stop();
+
+            MapReader = new FileMapReader(mapLocation);
+
+            bool isMSPInit = false;
+            string[] tracks = MapReader.GetAvailableTracks(songName);
+
+            string musicDirectory = songDirectory + "\\";
+
+            readers = new List<CustomVorbisWaveReader>();
+            loopSampleProviders = new List<LoopSampleProvider>();
+            volumeSampleProviders = new List<KeyValuePair<string, VolumeSampleProvider>>();
+
+            foreach (var track in tracks)
+            {
+                string trackFile = MapReader.GetValue(songName, track);
+                int loopStart = int.Parse(MapReader.GetValue(songName, "loop_start"));
+                int loopEnd = int.Parse(MapReader.GetValue(songName, "loop_end"));
+
+                readers.Add(new CustomVorbisWaveReader(musicDirectory + trackFile));
+
+                loopSampleProviders.Add(new LoopSampleProvider(readers.Last(), loopStart, loopEnd) { Loop = Loop });
+                volumeSampleProviders.Add(new KeyValuePair<string, VolumeSampleProvider>(track, new VolumeSampleProvider(loopSampleProviders.Last())));
+
+                Console.WriteLine("Added LoopSampleProvider for song \"" + songName + "\", track " + track + ".");
+
+                if (!isMSPInit)
+                {
+                    MixingSampleProvider = new MixingSampleProvider(readers.First().WaveFormat);
+                    isMSPInit = true;
+                }
+
+                MixingSampleProvider.AddMixerInput(volumeSampleProviders.Last().Value);
+            }
+
+            currentSong = songName;
+
+            MapReader.Dispose();
+        }
+
+        public void InitVolumes(string trackName, string overlayName = "")
+        {
+            foreach (var vsp in volumeSampleProviders)
+            {
+                if (vsp.Key.StartsWith("ins"))
+                {
+                    if (vsp.Key == trackName)
+                        vsp.Value.Volume = 1.0f;
+                    else
+                        vsp.Value.Volume = 0.0f;
+                }
+
+                if (overlayName != string.Empty)
+                {
+                    if (vsp.Key.StartsWith("voc"))
+                    {
+                        if (vsp.Key == overlayName)
+                            vsp.Value.Volume = 1.0f;
+                        else
+                            vsp.Value.Volume = 0.0f;
+                    }
+                }
+            }
+        }
+
+        public void SetLoop(bool value)
+        {
+            Loop = value;
+
+            if (outputDevice.PlaybackState != PlaybackState.Stopped && loopSampleProviders.Count > 0)
+            {
+                foreach (var lsp in loopSampleProviders)
+                {
+                    lsp.Loop = value;
+                }
+            }
+        }
+
+        public long GetPlaybackPosition()
+        {
+            if (outputDevice.PlaybackState != PlaybackState.Stopped && readers?.Count > 0)
+            {
+                long currentPos = readers[0].Position;
+
+                return currentPos;
+            }
+            else
+                return 0;
+        }
+
+        public void SetPlaybackPosition(long position)
+        {
+            if (loopSampleProviders.Count > 0)
+            {
+                try
+                {
+                    long currentLength = loopSampleProviders[0].SourceStream.Length;
+
+                    foreach (var lsp in loopSampleProviders)
+                    {
+                        lsp.Seek(position - (position % lsp.WaveFormat.Channels));
+                    }
+                }
+                catch (Exception)
+                {
+                    Console.WriteLine("Position exceeded limits of LoopSampleProvider.");
+                }
+            }
+        }
+
+        public long GetPlaybackLength()
+        {
+            if (outputDevice.PlaybackState != PlaybackState.Stopped && readers?.Count > 0)
+            {
+                long length = readers[0].Length;
+
+                return length;
+            }
+            else
+                return 0;
+        }
+
+        public void FadeTrackTo(FadeTrack fadeTrack, string trackName)
+        {
+            if (outputDevice.PlaybackState == PlaybackState.Playing)
+            {
+                float speed = fadeSpeed;
+
+                Timer timer = new Timer()
+                {
+                    Interval = fadeInterval
+                };
+
+                VolumeSampleProvider fadeIn = null;
+                VolumeSampleProvider fadeOut = null;
+
+                foreach (var item in volumeSampleProviders)
+                {
+                    var vsp = item.Value;
+
+                    if (item.Key.StartsWith(fadeTrack == FadeTrack.Main ? "ins" : "voc"))
+                    {
+                        if (item.Key == trackName)
+                            fadeIn = vsp;
+
+                        if (vsp.Volume > 0.0f)
+                            fadeOut = vsp;
+                    }
+                }
+
+                if (fadeIn != null)
+                    fadeIn.Volume = 0.0f;
+
+                if (fadeOut != null)
+                    fadeOut.Volume = 1.0f;
+
+                timer.Elapsed += (sndr, evt) =>
+                {
+                    if (fadeIn != null)
+                        fadeIn.Volume += speed;
+
+                    if (fadeOut != null)
+                        fadeOut.Volume -= speed;
+
+                    //CurrentFadeVolume = fadeIn.Volume;
+
+                    if (fadeIn != null)
+                    {
+                        if (fadeIn.Volume >= 1.0f)
+                        {
+                            fadeIn.Volume = 1.0f;
+
+                            if (fadeOut != null)
+                                fadeOut.Volume = 0.0f;
+
+                            timer.Enabled = false;
+                        }
+                    }
+
+                    if (fadeOut != null)
+                    {
+                        if (fadeOut.Volume <= 0.0f)
+                        {
+                            if (fadeIn != null)
+                                fadeIn.Volume = 1.0f;
+
+                            fadeOut.Volume = 0.0f;
+
+                            timer.Enabled = false;
+                        }
+                    }
+                };
+
+                if (fadeIn != null || fadeOut != null)
+                {
+                    timer.Enabled = true;
+                }
+            }
+            else
+            {
+                InitVolumes(trackName);
+            }
+        }
+    }
+}

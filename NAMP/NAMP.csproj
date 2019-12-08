@@ -82,8 +82,10 @@
       <DependentUpon>MainWindow.cs</DependentUpon>
     </Compile>
     <Compile Include="FileMapReader.cs" />
+    <Compile Include="MusicPlayer.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SfxPlayer.cs" />
     <EmbeddedResource Include="MainWindow.resx">
       <DependentUpon>MainWindow.cs</DependentUpon>
     </EmbeddedResource>
@@ -137,6 +139,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\chosen2.ogg" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\invalid.ogg" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
