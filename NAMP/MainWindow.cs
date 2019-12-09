@@ -19,16 +19,7 @@ namespace NAMP
         WaveOut OutputDevice = new WaveOut() { DesiredLatency = 100 };
         SfxPlayer SfxPlayer = new SfxPlayer();
 
-        List<CustomVorbisWaveReader> CustomVorbisWaveReaders;
-        List<LoopSampleProvider> LoopSampleProviders;
-        List<KeyValuePair<string, VolumeSampleProvider>> VolumeSampleProviders;
-
-        MixingSampleProvider MixingSampleProvider;
-
         FileMapReader MapReader;
-
-        float fadeSpeed = 0.0075f;
-        int fadeInterval = 16;
 
         float sfxVolume = 2.0f;
 
@@ -41,7 +32,6 @@ namespace NAMP
             InitializeComponent();
 
             Player = new MusicPlayer(musicPath.Text);
-
             Player.SetLoop(loopCheckBox.Checked);
 
             SfxPlayer.Volume = sfxVolume;
@@ -87,8 +77,8 @@ namespace NAMP
 
         private void PositionUpdate_Tick(object sender, EventArgs e)
         {
-            long position = Player.GetPlaybackPosition();
-            long length = Player.GetPlaybackLength();
+            long position = Player.PlaybackPosition;
+            long length = Player.PlaybackLength;
 
             if (length > 0)
                 playPosition.Value = (int)((double)playPosition.Maximum * ((double)position / (double)length));
@@ -96,7 +86,7 @@ namespace NAMP
 
         private void PlayPosition_Scroll(object sender, EventArgs e)
         {
-            long length = Player.GetPlaybackLength();
+            long length = Player.PlaybackLength;
             int newPos = (int)(length * ((double)playPosition.Value / (double)playPosition.Maximum));
 
             if (length > 0)
@@ -136,7 +126,38 @@ namespace NAMP
 
         private void PauseButton_Click(object sender, EventArgs e)
         {
-            Player.Pause();
+            WaveOut tempPlayer = new WaveOut() { DesiredLatency = 100 };
+
+            Console.WriteLine(Player.PlaybackState);
+
+            if (Player.PlaybackState == PlaybackState.Paused)
+            {
+                tempPlayer.Init(new VolumeSampleProvider(new VorbisWaveReader(new MemoryStream(Properties.Resources.resume))) { Volume = sfxVolume });
+                tempPlayer.Play();
+
+                pauseButton.Enabled = false;
+
+                tempPlayer.PlaybackStopped += (snd, evt) =>
+                {
+                    Player.Pause();
+
+                    pauseButton.Enabled = true;
+                };
+            }
+            else
+            {
+                tempPlayer.Init(new VolumeSampleProvider(new VorbisWaveReader(new MemoryStream(Properties.Resources.pause))) { Volume = sfxVolume });
+                tempPlayer.Play();
+
+                pauseButton.Enabled = false;
+
+                tempPlayer.PlaybackStopped += (snd, evt) =>
+                {
+                    pauseButton.Enabled = true;
+                };
+
+                Player.Pause();
+            }
         }
 
         private void SongList_SelectedIndexChanged(object sender, EventArgs e)

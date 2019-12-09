@@ -66,16 +66,16 @@
             // PositionUpdate
             // 
             this.PositionUpdate.Enabled = true;
-            this.PositionUpdate.Interval = 1;
+            this.PositionUpdate.Interval = 500;
             this.PositionUpdate.Tick += new System.EventHandler(this.PositionUpdate_Tick);
             // 
             // pauseButton
             // 
-            this.pauseButton.Location = new System.Drawing.Point(288, 517);
+            this.pauseButton.Location = new System.Drawing.Point(258, 504);
             this.pauseButton.Name = "pauseButton";
-            this.pauseButton.Size = new System.Drawing.Size(75, 23);
+            this.pauseButton.Size = new System.Drawing.Size(134, 39);
             this.pauseButton.TabIndex = 5;
-            this.pauseButton.Text = "Pause";
+            this.pauseButton.Text = "Pause / Resume";
             this.pauseButton.UseVisualStyleBackColor = true;
             this.pauseButton.Click += new System.EventHandler(this.PauseButton_Click);
             // 

@@ -11,7 +11,7 @@ using System.Timers;
 
 namespace NAMP
 {
-    class MusicPlayer
+    class MusicPlayer : IDisposable
     {
         private WaveOut outputDevice = new WaveOut() { DesiredLatency = 100 };
         private List<CustomVorbisWaveReader> readers;
@@ -21,11 +21,6 @@ namespace NAMP
         private MixingSampleProvider MixingSampleProvider;
 
         private FileMapReader MapReader;
-
-        private VorbisWaveReader pauseVorbis = new VorbisWaveReader(new MemoryStream(Properties.Resources.pause));
-        private VorbisWaveReader resumeVorbis = new VorbisWaveReader(new MemoryStream(Properties.Resources.resume));
-
-        float sfxVolume = 2.0f;
 
         float fadeSpeed = 0.0075f;
         int fadeInterval = 16;
@@ -40,9 +35,29 @@ namespace NAMP
             this.songDirectory = songDirectory;
         }
 
+        public PlaybackState PlaybackState => outputDevice.PlaybackState;
+
         public bool Loop { get; set; }
 
         public float CurrentFadeVolume { get; private set; }
+
+        public long PlaybackPosition
+        {
+            get
+            {
+                if (readers?.Count > 0) return readers[0].Position;
+                else return 0;
+            }
+        }
+
+        public long PlaybackLength
+        {
+            get
+            {
+                if (readers?.Count > 0) return readers[0].Length;
+                else return 0;
+            }
+        }
 
         public enum FadeTrack
         {
@@ -55,7 +70,6 @@ namespace NAMP
             if (outputDevice.PlaybackState != PlaybackState.Stopped)
             {
                 outputDevice.Stop();
-                outputDevice.Dispose();
 
                 InitPlayer(currentSong);
             }
@@ -71,31 +85,12 @@ namespace NAMP
 
         public void Pause()
         {
-            WaveOut tempPlayer = new WaveOut() { DesiredLatency = 100 };
-
-            if (outputDevice.PlaybackState == PlaybackState.Paused)
+            if (outputDevice.PlaybackState == PlaybackState.Paused || outputDevice.PlaybackState == PlaybackState.Stopped)
             {
-                tempPlayer.Init(new VolumeSampleProvider(resumeVorbis) { Volume = sfxVolume });
-                tempPlayer.Play();
-
-                tempPlayer.PlaybackStopped += (snd, evt) =>
-                {
-                    tempPlayer.Dispose();
-
-                    outputDevice.Play();
-                };
-
+                outputDevice.Play();
             }
             else
             {
-                tempPlayer.Init(new VolumeSampleProvider(pauseVorbis) { Volume = sfxVolume });
-                tempPlayer.Play();
-
-                tempPlayer.PlaybackStopped += (snd, evt) =>
-                {
-                    tempPlayer.Dispose();
-                };
-
                 outputDevice.Pause();
             }
         }
@@ -277,7 +272,8 @@ namespace NAMP
                     {
                         if (fadeIn.Volume >= 1.0f)
                         {
-                            fadeIn.Volume = 1.0f;
+                            if (fadeIn != null)
+                                fadeIn.Volume = 1.0f;
 
                             if (fadeOut != null)
                                 fadeOut.Volume = 0.0f;
@@ -293,7 +289,8 @@ namespace NAMP
                             if (fadeIn != null)
                                 fadeIn.Volume = 1.0f;
 
-                            fadeOut.Volume = 0.0f;
+                            if (fadeOut != null)
+                                fadeOut.Volume = 0.0f;
 
                             timer.Enabled = false;
                         }
@@ -309,6 +306,11 @@ namespace NAMP
             {
                 InitVolumes(trackName);
             }
+        }
+
+        public void Dispose()
+        {
+            outputDevice.Dispose();
         }
     }
 }
