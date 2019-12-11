@@ -1,13 +1,8 @@
-﻿using NAudio.Vorbis;
-using NAudio.Wave;
+﻿using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Timers;
 
 namespace NAMP
@@ -15,16 +10,16 @@ namespace NAMP
     class MusicPlayer : IDisposable
     {
         private WaveOut outputDevice;
+
         private List<CustomVorbisWaveReader> readers;
         private List<LoopSampleProvider> loopSampleProviders;
         private List<KeyValuePair<string, VolumeSampleProvider>> volumeSampleProviders;
-
         private MixingSampleProvider MixingSampleProvider;
 
         private FileMapReader MapReader;
 
-        float fadeSpeed = 0.0075f;
-        int fadeInterval = 16;
+        readonly float fadeSpeed = 0.0075f;
+        readonly int fadeInterval = 16;
 
         string mapLocation = @"mapping.txt";
 
@@ -32,23 +27,26 @@ namespace NAMP
 
         public MusicPlayer(string songDirectory = "")
         {
+            outputDevice = new WaveOut() { DesiredLatency = 100 };
+
             SongDirectory = songDirectory;
         }
 
-        public PlaybackState PlaybackState => outputDevice.PlaybackState;
+        public bool MainTrackFadeInProgress { get; set; }
+
+        public bool OverlayTrackFadeInProgress { get; set; }
 
         public bool Loop { get; set; }
 
-        public float CurrentFadeVolume { get; private set; }
-
-        public long PlaybackPosition
+        public enum TrackType
         {
-            get
-            {
-                if (readers?.Count > 0) return readers[0].Position;
-                else return 0;
-            }
+            Main,
+            Overlay
         }
+
+        public float MainTrackFadeVolume { get; private set; }
+
+        public float OverlayTrackFadeVolume { get; private set; }
 
         public long PlaybackLength
         {
@@ -59,51 +57,20 @@ namespace NAMP
             }
         }
 
+        public long PlaybackPosition
+        {
+            get
+            {
+                if (readers?.Count > 0) return readers[0].Position;
+                else return 0;
+            }
+        }
+
+        public PlaybackState PlaybackState => outputDevice.PlaybackState;
+
         public string SongDirectory { get; set; }
 
-        public enum FadeTrack
-        {
-            Main,
-            Overlay
-        }
-
-        public void Play(string trackName, string overlayName = "")
-        {
-            if (outputDevice.PlaybackState != PlaybackState.Stopped)
-            {
-                outputDevice.Stop();
-                outputDevice.Dispose();
-
-                InitPlayer(currentSong);
-            }
-
-            InitVolumes(trackName, overlayName);
-
-            if (MixingSampleProvider != null)
-            {
-                outputDevice.Init(MixingSampleProvider);
-                outputDevice.Play();
-            }
-        }
-
-        public void Pause()
-        {
-            if (outputDevice.PlaybackState == PlaybackState.Paused || outputDevice.PlaybackState == PlaybackState.Stopped)
-            {
-                outputDevice.Play();
-            }
-            else
-            {
-                outputDevice.Pause();
-            }
-        }
-
-        public void Stop()
-        {
-            outputDevice.Stop();
-        }
-
-        public void InitPlayer(string songName)
+        public void InitTracks(string songName)
         {
             if (SongDirectory != string.Empty)
             {
@@ -129,7 +96,7 @@ namespace NAMP
                     loopSampleProviders.Add(new LoopSampleProvider(readers.Last(), loopStart, loopEnd) { Loop = Loop });
                     volumeSampleProviders.Add(new KeyValuePair<string, VolumeSampleProvider>(track, new VolumeSampleProvider(loopSampleProviders.Last())));
 
-                    Console.WriteLine("Added LoopSampleProvider for song \"" + songName + "\", track " + track + ".");
+                    Console.WriteLine($"Added track \"{track}\" for song \"{songName}\".");
 
                     if (!isMSPInit)
                     {
@@ -146,29 +113,182 @@ namespace NAMP
             }
         }
 
-        public void InitVolumes(string trackName, string overlayName = "")
+        public void InitVolumes(string mainTrackName, string overlayTrackName = "")
         {
-            foreach (var vsp in volumeSampleProviders)
+            foreach (var item in volumeSampleProviders)
             {
-                if (vsp.Key.StartsWith("ins"))
+                if (item.Key.StartsWith("ins"))
                 {
-                    if (vsp.Key == trackName)
-                        vsp.Value.Volume = 1.0f;
+                    if (item.Key == mainTrackName)
+                    {
+                        if (item.Value.Volume < 1.0f)
+                            item.Value.Volume = 1.0f;
+                    }
                     else
-                        vsp.Value.Volume = 0.0f;
+                        item.Value.Volume = 0.0f;
                 }
 
-                if (overlayName != string.Empty)
+                if (string.IsNullOrWhiteSpace(overlayTrackName) && item.Key.StartsWith("voc"))
                 {
-                    if (vsp.Key.StartsWith("voc"))
+                    if (item.Key.StartsWith("voc"))
                     {
-                        if (vsp.Key == overlayName)
-                            vsp.Value.Volume = 1.0f;
+                        if (item.Key == overlayTrackName)
+                        {
+                            if (item.Value.Volume < 1.0f)
+                                item.Value.Volume = 1.0f;
+                        }
                         else
-                            vsp.Value.Volume = 0.0f;
+                            item.Value.Volume = 0.0f;
                     }
                 }
             }
+        }
+
+        public void Play(string mainTrackName, string overlayTrackName = "")
+        {
+            if (outputDevice.PlaybackState != PlaybackState.Stopped)
+            {
+                outputDevice.Stop();
+                outputDevice.Dispose();
+
+                InitTracks(currentSong);
+            }
+
+            InitVolumes(mainTrackName, overlayTrackName);
+
+            if (MixingSampleProvider != null)
+            {
+                outputDevice.Init(MixingSampleProvider);
+                outputDevice.Play();
+            }
+        }
+
+        public void Pause()
+        {
+            if (outputDevice?.PlaybackState == PlaybackState.Paused)
+            {
+                outputDevice.Play();
+            }
+            else
+            {
+                outputDevice.Pause();
+            }
+        }
+
+        public void Stop()
+        {
+            outputDevice.Stop();
+        }
+
+        public void FadeTrackTo(TrackType trackType, string trackName)
+        {
+            if ((!MainTrackFadeInProgress && trackType == TrackType.Main)
+                || (!OverlayTrackFadeInProgress && trackType == TrackType.Overlay))
+            {
+                if (outputDevice.PlaybackState == PlaybackState.Playing)
+                {
+                    float speed = fadeSpeed;
+
+                    Timer timer = new Timer()
+                    {
+                        Interval = fadeInterval
+                    };
+
+                    VolumeSampleProvider fadeIn = null;
+                    VolumeSampleProvider fadeOut = null;
+
+                    string[] trackTypes =
+                    {
+                        "ins",
+                        "voc"
+                    };
+
+                    foreach (var item in volumeSampleProviders)
+                    {
+                        var vsp = item.Value;
+
+                        if (item.Key.StartsWith(trackTypes[(int)trackType]))
+                        {
+                            if (item.Key == trackName)
+                            {
+                                if (vsp.Volume < 1.0f)
+                                    fadeIn = vsp;
+                                else break;
+                            }
+
+                            if (vsp.Volume > 0.0f)
+                                fadeOut = vsp;
+                        }
+                    }
+
+                    if (fadeIn != null)
+                        fadeIn.Volume = 0.0f;
+
+                    if (fadeOut != null)
+                        fadeOut.Volume = 1.0f;
+
+                    timer.Elapsed += (sndr, evt) =>
+                    {
+                        if (fadeIn != null)
+                        {
+                            fadeIn.Volume += speed;
+
+                            if (fadeIn.Volume >= 1.0f) fadeIn.Volume = 1.0f;
+
+                            if (trackType == TrackType.Main)
+                            {
+                                MainTrackFadeVolume = fadeIn.Volume;
+                                MainTrackFadeInProgress = true;
+                            }
+                            else if (trackType == TrackType.Overlay)
+                            {
+                                OverlayTrackFadeVolume = fadeIn.Volume;
+                                OverlayTrackFadeInProgress = true;
+                            }
+                        }
+
+                        if (fadeOut != null)
+                        {
+                            fadeOut.Volume -= speed;
+
+                            if (fadeOut.Volume <= 0.0f) fadeOut.Volume = 0.0f;
+
+                            if (trackType == TrackType.Main)
+                            {
+                                MainTrackFadeVolume = fadeOut.Volume;
+                                MainTrackFadeInProgress = true;
+                            }
+                            else if (trackType == TrackType.Overlay)
+                            {
+                                OverlayTrackFadeVolume = fadeOut.Volume;
+                                OverlayTrackFadeInProgress = true;
+                            }
+                        }
+
+                        if (fadeIn?.Volume == 1.0f || fadeOut?.Volume == 0.0f)
+                        {
+                            if (trackType == TrackType.Main)
+                                MainTrackFadeInProgress = false;
+                            else if (trackType == TrackType.Overlay)
+                                OverlayTrackFadeInProgress = false;
+
+                            timer.Enabled = false;
+                            timer.Dispose();
+                        }
+                    };
+
+                    if (fadeIn != null || fadeOut != null)
+                    {
+                        timer.Enabled = true;
+                    }
+                }
+                else InitVolumes(trackName, trackName);
+            }
+        }
+
+        public void Flush()
+        {
+            // if ()
         }
 
         public void SetLoop(bool value)
@@ -182,18 +302,6 @@ namespace NAMP
                     lsp.Loop = value;
                 }
             }
-        }
-
-        public long GetPlaybackPosition()
-        {
-            if (outputDevice.PlaybackState != PlaybackState.Stopped && readers?.Count > 0)
-            {
-                long currentPos = readers[0].Position;
-
-                return currentPos;
-            }
-            else
-                return 0;
         }
 
         public void SetPlaybackPosition(long position)
@@ -211,104 +319,7 @@ namespace NAMP
                 }
                 catch (Exception)
                 {
-                    Console.WriteLine("Position exceeded limits of LoopSampleProvider.");
                 }
-            }
-        }
-
-        public long GetPlaybackLength()
-        {
-            if (outputDevice.PlaybackState != PlaybackState.Stopped && readers?.Count > 0)
-            {
-                long length = readers[0].Length;
-
-                return length;
-            }
-            else
-                return 0;
-        }
-
-        public void FadeTrackTo(FadeTrack fadeTrack, string trackName)
-        {
-            if (outputDevice.PlaybackState == PlaybackState.Playing)
-            {
-                float speed = fadeSpeed;
-
-                Timer timer = new Timer()
-                {
-                    Interval = fadeInterval
-                };
-
-                VolumeSampleProvider fadeIn = null;
-                VolumeSampleProvider fadeOut = null;
-
-                foreach (var item in volumeSampleProviders)
-                {
-                    var vsp = item.Value;
-
-                    if (item.Key.StartsWith(fadeTrack == FadeTrack.Main ? "ins" : "voc"))
-                    {
-                        if (item.Key == trackName)
-                            fadeIn = vsp;
-
-                        if (vsp.Volume > 0.0f)
-                            fadeOut = vsp;
-                    }
-                }
-
-                if (fadeIn != null)
-                    fadeIn.Volume = 0.0f;
-
-                if (fadeOut != null)
-                    fadeOut.Volume = 1.0f;
-
-                timer.Elapsed += (sndr, evt) =>
-                {
-                    if (fadeIn != null)
-                        fadeIn.Volume += speed;
-
-                    if (fadeOut != null)
-                        fadeOut.Volume -= speed;
-
-                    //CurrentFadeVolume = fadeIn.Volume;
-
-                    if (fadeIn != null)
-                    {
-                        if (fadeIn.Volume >= 1.0f)
-                        {
-                            if (fadeIn != null)
-                                fadeIn.Volume = 1.0f;
-
-                            if (fadeOut != null)
-                                fadeOut.Volume = 0.0f;
-
-                            timer.Enabled = false;
-                        }
-                    }
-
-                    if (fadeOut != null)
-                    {
-                        if (fadeOut.Volume <= 0.0f)
-                        {
-                            if (fadeIn != null)
-                                fadeIn.Volume = 1.0f;
-
-                            if (fadeOut != null)
-                                fadeOut.Volume = 0.0f;
-
-                            timer.Enabled = false;
-                        }
-                    }
-                };
-
-                if (fadeIn != null || fadeOut != null)
-                {
-                    timer.Enabled = true;
-                }
-            }
-            else
-            {
-                InitVolumes(trackName);
             }
         }
 

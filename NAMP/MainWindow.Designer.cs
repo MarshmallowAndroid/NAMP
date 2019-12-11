@@ -40,8 +40,9 @@
             this.mainTracksPanel = new System.Windows.Forms.FlowLayoutPanel();
             this.overlayTracksPanel = new System.Windows.Forms.FlowLayoutPanel();
             this.playButton = new System.Windows.Forms.Button();
-            this.fadeProgress = new System.Windows.Forms.ProgressBar();
+            this.mainFadeProgress = new System.Windows.Forms.ProgressBar();
             this.loopCheckBox = new System.Windows.Forms.CheckBox();
+            this.overlayFadeProgress = new System.Windows.Forms.ProgressBar();
             ((System.ComponentModel.ISupportInitialize)(this.playPosition)).BeginInit();
             this.SuspendLayout();
             // 
@@ -66,7 +67,7 @@
             // PositionUpdate
             // 
             this.PositionUpdate.Enabled = true;
-            this.PositionUpdate.Interval = 500;
+            this.PositionUpdate.Interval = 16;
             this.PositionUpdate.Tick += new System.EventHandler(this.PositionUpdate_Tick);
             // 
             // pauseButton
@@ -141,13 +142,13 @@
             this.playButton.UseVisualStyleBackColor = true;
             this.playButton.Click += new System.EventHandler(this.PlayButton_Click);
             // 
-            // fadeProgress
+            // mainFadeProgress
             // 
-            this.fadeProgress.Location = new System.Drawing.Point(12, 398);
-            this.fadeProgress.Name = "fadeProgress";
-            this.fadeProgress.Size = new System.Drawing.Size(252, 23);
-            this.fadeProgress.TabIndex = 9;
-            this.fadeProgress.Visible = false;
+            this.mainFadeProgress.Location = new System.Drawing.Point(13, 398);
+            this.mainFadeProgress.Name = "mainFadeProgress";
+            this.mainFadeProgress.Size = new System.Drawing.Size(250, 23);
+            this.mainFadeProgress.TabIndex = 9;
+            this.mainFadeProgress.Visible = false;
             // 
             // loopCheckBox
             // 
@@ -163,13 +164,22 @@
             this.loopCheckBox.UseVisualStyleBackColor = true;
             this.loopCheckBox.CheckedChanged += new System.EventHandler(this.LoopCheckBox_CheckedChanged);
             // 
+            // overlayFadeProgress
+            // 
+            this.overlayFadeProgress.Location = new System.Drawing.Point(269, 398);
+            this.overlayFadeProgress.Name = "overlayFadeProgress";
+            this.overlayFadeProgress.Size = new System.Drawing.Size(251, 23);
+            this.overlayFadeProgress.TabIndex = 11;
+            this.overlayFadeProgress.Visible = false;
+            // 
             // MainWindow
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(651, 584);
+            this.Controls.Add(this.overlayFadeProgress);
             this.Controls.Add(this.loopCheckBox);
-            this.Controls.Add(this.fadeProgress);
+            this.Controls.Add(this.mainFadeProgress);
             this.Controls.Add(this.overlayTracksPanel);
             this.Controls.Add(this.mainTracksPanel);
             this.Controls.Add(this.trackList);
@@ -204,8 +214,9 @@
         private System.Windows.Forms.FlowLayoutPanel mainTracksPanel;
         private System.Windows.Forms.FlowLayoutPanel overlayTracksPanel;
         private System.Windows.Forms.Button playButton;
-        private System.Windows.Forms.ProgressBar fadeProgress;
+        private System.Windows.Forms.ProgressBar mainFadeProgress;
         private System.Windows.Forms.CheckBox loopCheckBox;
+        private System.Windows.Forms.ProgressBar overlayFadeProgress;
     }
 }
 

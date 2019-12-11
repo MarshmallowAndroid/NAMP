@@ -89,8 +89,6 @@ namespace NAMP
                 {
                     if (Loop)
                     {
-                        Console.WriteLine("Queueing loop segment SampleProvider.");
-
                         if (SourceStream.Position > start)
                             SourceStream.Position = start;
 
@@ -103,8 +101,6 @@ namespace NAMP
                     }
                     else
                     {
-                        Console.WriteLine("Queueing remaining track.");
-
                         providers.Enqueue(new OffsetSampleProvider(SourceStream.ToSampleProvider()));
 
                         currentProvider = providers.Dequeue();

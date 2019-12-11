@@ -82,6 +82,30 @@ namespace NAMP
 
             if (length > 0)
                 playPosition.Value = (int)((double)playPosition.Maximum * ((double)position / (double)length));
+
+            mainFadeProgress.Value = (int)(Player.MainTrackFadeVolume * 100.0f);
+            overlayFadeProgress.Value = (int)(Player.OverlayTrackFadeVolume * 100.0f);
+
+            //if (Player.CurrentMainTrackFadeVolume == 0.0f || Player.CurrentMainTrackFadeVolume == 1.0f)
+            //    mainTracksPanel.Enabled = true;
+            //else
+            //    mainTracksPanel.Enabled = false;
+
+            //if (Player.CurrentOverlayTrackFadeVolume == 0.0f || Player.CurrentOverlayTrackFadeVolume == 1.0f)
+            //    overlayTracksPanel.Enabled = true;
+            //else
+            //    overlayTracksPanel.Enabled = false;
+
+            if (Player.MainTrackFadeInProgress)
+                mainTracksPanel.Enabled = false;
+            else mainTracksPanel.Enabled = true;
+
+            if (Player.OverlayTrackFadeInProgress)
+                overlayTracksPanel.Enabled = false;
+            else overlayTracksPanel.Enabled = true;
+
+            //Console.WriteLine(Player.MainTrackFadeInProgress);
+            //Console.WriteLine(Player.OverlayTrackFadeInProgress);
         }
 
         private void PlayPosition_Scroll(object sender, EventArgs e)
@@ -128,8 +152,6 @@ namespace NAMP
         {
             WaveOut tempPlayer = new WaveOut() { DesiredLatency = 100 };
 
-            Console.WriteLine(Player.PlaybackState);
-
             if (Player.PlaybackState == PlaybackState.Paused)
             {
                 tempPlayer.Init(new VolumeSampleProvider(new VorbisWaveReader(new MemoryStream(Properties.Resources.resume))) { Volume = sfxVolume });
@@ -140,6 +162,7 @@ namespace NAMP
                 tempPlayer.PlaybackStopped += (snd, evt) =>
                 {
                     Player.Pause();
+                    Console.WriteLine(Player.PlaybackState);
 
                     pauseButton.Enabled = true;
                 };
@@ -157,6 +180,7 @@ namespace NAMP
                 };
 
                 Player.Pause();
+                Console.WriteLine(Player.PlaybackState);
             }
         }
 
@@ -249,7 +273,7 @@ namespace NAMP
                     }
                 }
 
-                Player.InitPlayer(selectedSong);
+                Player.InitTracks(selectedSong);
 
                 //((RadioButton)mainTracksPanel.Controls[0]).Checked = true;
 
@@ -268,12 +292,12 @@ namespace NAMP
             RadioButton radioButton = (RadioButton)sender;
             string selectedTrack = radioButton.Name;
 
-            Player.FadeTrackTo(MusicPlayer.FadeTrack.Overlay, selectedTrack);
+            if (radioButton.Checked) Player.FadeTrackTo(MusicPlayer.TrackType.Overlay, selectedTrack);
         }
 
         private void NoneRadioButton_CheckedChanged(object sender, EventArgs e)
         {
-            Player.FadeTrackTo(MusicPlayer.FadeTrack.Overlay, "");
+            Player.FadeTrackTo(MusicPlayer.TrackType.Overlay, "");
         }
 
         private void TrackRadioButton_CheckedChanged(object sender, EventArgs e)
@@ -281,7 +305,7 @@ namespace NAMP
             RadioButton radioButton = (RadioButton)sender;
             string selectedTrack = radioButton.Name;
 
-            Player.FadeTrackTo(MusicPlayer.FadeTrack.Main, selectedTrack);
+            if (radioButton.Checked) Player.FadeTrackTo(MusicPlayer.TrackType.Main, selectedTrack);
         }
     }
 }
