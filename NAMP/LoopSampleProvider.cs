@@ -54,7 +54,12 @@ namespace NAMP
             if (position > start && position < end)
                 providers.Enqueue(new OffsetSampleProvider(SourceStream.ToSampleProvider())
                 {
-                    TakeSamples = GetChannelMultiple(end - (int)SourceStream.Position) * 2
+                    TakeSamples = GetChannelMultiple((end - (int)position) * 2)
+                });
+            else if (position < start)
+                providers.Enqueue(new OffsetSampleProvider(SourceStream.ToSampleProvider())
+                {
+                    TakeSamples = GetChannelMultiple((start - (int)position) * 2)
                 });
             else
                 providers.Enqueue(new OffsetSampleProvider(SourceStream.ToSampleProvider()));
@@ -84,24 +89,21 @@ namespace NAMP
                 {
                     if (Loop)
                     {
-                        Console.WriteLine("Start of queued SampleProvider.");
+                        Console.WriteLine("Queueing loop segment SampleProvider.");
 
                         if (SourceStream.Position > start)
                             SourceStream.Position = start;
 
                         providers.Enqueue(new OffsetSampleProvider(SourceStream.ToSampleProvider())
                         {
-                            TakeSamples = GetChannelMultiple(end - start) * 2
+                            TakeSamples = GetChannelMultiple((end - start) * 2)
                         });
 
                         currentProvider = providers.Dequeue();
                     }
                     else
                     {
-                        Console.WriteLine("End of queued SampleProvider.");
-
-                        if (SourceStream.Position > end)
-                            SourceStream.Position = end;
+                        Console.WriteLine("Queueing remaining track.");
 
                         providers.Enqueue(new OffsetSampleProvider(SourceStream.ToSampleProvider()));
 
