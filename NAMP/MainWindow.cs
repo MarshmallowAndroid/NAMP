@@ -86,16 +86,6 @@ namespace NAMP
             mainFadeProgress.Value = (int)(Player.MainTrackFadeVolume * 100.0f);
             overlayFadeProgress.Value = (int)(Player.OverlayTrackFadeVolume * 100.0f);
 
-            //if (Player.CurrentMainTrackFadeVolume == 0.0f || Player.CurrentMainTrackFadeVolume == 1.0f)
-            //    mainTracksPanel.Enabled = true;
-            //else
-            //    mainTracksPanel.Enabled = false;
-
-            //if (Player.CurrentOverlayTrackFadeVolume == 0.0f || Player.CurrentOverlayTrackFadeVolume == 1.0f)
-            //    overlayTracksPanel.Enabled = true;
-            //else
-            //    overlayTracksPanel.Enabled = false;
-
             if (Player.MainTrackFadeInProgress)
                 mainTracksPanel.Enabled = false;
             else mainTracksPanel.Enabled = true;
@@ -103,9 +93,6 @@ namespace NAMP
             if (Player.OverlayTrackFadeInProgress)
                 overlayTracksPanel.Enabled = false;
             else overlayTracksPanel.Enabled = true;
-
-            //Console.WriteLine(Player.MainTrackFadeInProgress);
-            //Console.WriteLine(Player.OverlayTrackFadeInProgress);
         }
 
         private void PlayPosition_Scroll(object sender, EventArgs e)
