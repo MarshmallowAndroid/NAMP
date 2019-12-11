@@ -16,7 +16,6 @@ namespace NAMP
 {
     public partial class MainWindow : Form
     {
-        WaveOut OutputDevice = new WaveOut() { DesiredLatency = 100 };
         SfxPlayer SfxPlayer = new SfxPlayer();
 
         FileMapReader MapReader;
@@ -31,7 +30,8 @@ namespace NAMP
         {
             InitializeComponent();
 
-            Player = new MusicPlayer(musicPath.Text);
+            Player = MusicPlayer.PlayerInstance;
+            Player.SongDirectory = musicPath.Text;
             Player.SetLoop(loopCheckBox.Checked);
 
             SfxPlayer.Volume = sfxVolume;
@@ -164,7 +164,7 @@ namespace NAMP
         {
             MapReader = new FileMapReader(mapLocation);
 
-            OutputDevice.Stop();
+            Player.Stop();
 
             string selectedSong = songList.SelectedItem?.ToString();
 

@@ -3,6 +3,7 @@ using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -13,7 +14,7 @@ namespace NAMP
 {
     class MusicPlayer : IDisposable
     {
-        private WaveOut outputDevice = new WaveOut() { DesiredLatency = 100 };
+        private WaveOut outputDevice;
         private List<CustomVorbisWaveReader> readers;
         private List<LoopSampleProvider> loopSampleProviders;
         private List<KeyValuePair<string, VolumeSampleProvider>> volumeSampleProviders;
@@ -26,13 +27,12 @@ namespace NAMP
         int fadeInterval = 16;
 
         string mapLocation = @"mapping.txt";
-        string songDirectory = "";
 
         string currentSong = "";
 
-        public MusicPlayer(string songDirectory)
+        public MusicPlayer(string songDirectory = "")
         {
-            this.songDirectory = songDirectory;
+            SongDirectory = songDirectory;
         }
 
         public PlaybackState PlaybackState => outputDevice.PlaybackState;
@@ -59,6 +59,8 @@ namespace NAMP
             }
         }
 
+        public string SongDirectory { get; set; }
+
         public enum FadeTrack
         {
             Main,
@@ -70,6 +72,7 @@ namespace NAMP
             if (outputDevice.PlaybackState != PlaybackState.Stopped)
             {
                 outputDevice.Stop();
+                outputDevice.Dispose();
 
                 InitPlayer(currentSong);
             }
@@ -102,44 +105,45 @@ namespace NAMP
 
         public void InitPlayer(string songName)
         {
-            outputDevice.Stop();
-
-            MapReader = new FileMapReader(mapLocation);
-
-            bool isMSPInit = false;
-            string[] tracks = MapReader.GetAvailableTracks(songName);
-
-            string musicDirectory = songDirectory + "\\";
-
-            readers = new List<CustomVorbisWaveReader>();
-            loopSampleProviders = new List<LoopSampleProvider>();
-            volumeSampleProviders = new List<KeyValuePair<string, VolumeSampleProvider>>();
-
-            foreach (var track in tracks)
+            if (SongDirectory != string.Empty)
             {
-                string trackFile = MapReader.GetValue(songName, track);
-                int loopStart = int.Parse(MapReader.GetValue(songName, "loop_start"));
-                int loopEnd = int.Parse(MapReader.GetValue(songName, "loop_end"));
+                MapReader = new FileMapReader(mapLocation);
 
-                readers.Add(new CustomVorbisWaveReader(musicDirectory + trackFile));
+                bool isMSPInit = false;
+                string[] tracks = MapReader.GetAvailableTracks(songName);
 
-                loopSampleProviders.Add(new LoopSampleProvider(readers.Last(), loopStart, loopEnd) { Loop = Loop });
-                volumeSampleProviders.Add(new KeyValuePair<string, VolumeSampleProvider>(track, new VolumeSampleProvider(loopSampleProviders.Last())));
+                string musicDirectory = SongDirectory + "\\";
 
-                Console.WriteLine("Added LoopSampleProvider for song \"" + songName + "\", track " + track + ".");
+                readers = new List<CustomVorbisWaveReader>();
+                loopSampleProviders = new List<LoopSampleProvider>();
+                volumeSampleProviders = new List<KeyValuePair<string, VolumeSampleProvider>>();
 
-                if (!isMSPInit)
+                foreach (var track in tracks)
                 {
-                    MixingSampleProvider = new MixingSampleProvider(readers.First().WaveFormat);
-                    isMSPInit = true;
+                    string trackFile = MapReader.GetValue(songName, track);
+                    int loopStart = int.Parse(MapReader.GetValue(songName, "loop_start"));
+                    int loopEnd = int.Parse(MapReader.GetValue(songName, "loop_end"));
+
+                    readers.Add(new CustomVorbisWaveReader(musicDirectory + trackFile));
+
+                    loopSampleProviders.Add(new LoopSampleProvider(readers.Last(), loopStart, loopEnd) { Loop = Loop });
+                    volumeSampleProviders.Add(new KeyValuePair<string, VolumeSampleProvider>(track, new VolumeSampleProvider(loopSampleProviders.Last())));
+
+                    Console.WriteLine("Added LoopSampleProvider for song \"" + songName + "\", track " + track + ".");
+
+                    if (!isMSPInit)
+                    {
+                        MixingSampleProvider = new MixingSampleProvider(readers.First().WaveFormat);
+                        isMSPInit = true;
+                    }
+
+                    MixingSampleProvider.AddMixerInput(volumeSampleProviders.Last().Value);
                 }
 
-                MixingSampleProvider.AddMixerInput(volumeSampleProviders.Last().Value);
+                currentSong = songName;
+
+                MapReader.Dispose();
             }
-
-            currentSong = songName;
-
-            MapReader.Dispose();
         }
 
         public void InitVolumes(string trackName, string overlayName = "")
@@ -312,5 +316,7 @@ namespace NAMP
         {
             outputDevice.Dispose();
         }
+
+        public static MusicPlayer PlayerInstance = new MusicPlayer();
     }
 }
