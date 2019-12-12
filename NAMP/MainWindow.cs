@@ -67,7 +67,7 @@ namespace NAMP
 
         private void MainWindow_Load(object sender, EventArgs e)
         {
-            MapReader = new FileMapReader(mapLocation);
+            MapReader = new FileMapReader(musicPath.Text + "\\mapping.txt");
 
             string[] availableSongs = MapReader.GetAvailableSongs();
             songList.Items.AddRange(availableSongs);
@@ -173,14 +173,14 @@ namespace NAMP
 
         private void SongList_SelectedIndexChanged(object sender, EventArgs e)
         {
-            MapReader = new FileMapReader(mapLocation);
-
-            Player.Stop();
-
             string selectedSong = songList.SelectedItem?.ToString();
 
             if (selectedSong != null)
             {
+                Player.Stop();
+
+                MapReader = new FileMapReader(musicPath.Text + "\\mapping.txt");
+
                 bool offRadioButtonAdded = false;
                 string[] trackNames = MapReader.GetAvailableTracks(selectedSong);
 
@@ -193,6 +193,7 @@ namespace NAMP
                     if (trackName.StartsWith("ins"))
                     {
                         string trackFile = MapReader.GetValue(selectedSong, trackName);
+
                         trackList.Items.Add(new ListViewItem(new[] { trackName, trackFile }));
 
                         string friendlyTrackName = "";
@@ -219,6 +220,7 @@ namespace NAMP
                             Text = friendlyTrackName.Trim(),
                             Name = trackName
                         };
+
                         trackRadioButton.CheckedChanged += TrackRadioButton_CheckedChanged;
 
                         mainTracksPanel.Controls.Add(trackRadioButton);
@@ -232,6 +234,7 @@ namespace NAMP
                                 Text = "None",
                                 Name = "none"
                             };
+
                             noneRadioButton.CheckedChanged += NoneRadioButton_CheckedChanged;
 
                             overlayTracksPanel.Controls.Add(noneRadioButton);
@@ -240,6 +243,7 @@ namespace NAMP
                         }
 
                         string trackFile = MapReader.GetValue(selectedSong, trackName);
+
                         trackList.Items.Add(new ListViewItem(new[] { trackName, trackFile }));
 
                         string numbering = "";
@@ -254,11 +258,14 @@ namespace NAMP
                             Text = "Vocals" + numbering,
                             Name = trackName
                         };
+
                         overlayRadioButton.CheckedChanged += OverlayRadioButton_CheckedChanged;
 
                         overlayTracksPanel.Controls.Add(overlayRadioButton);
                     }
                 }
+
+                MapReader.Dispose();
 
                 Player.InitTracks(selectedSong);
 
@@ -270,8 +277,6 @@ namespace NAMP
                 trackList.Sorting = SortOrder.Ascending;
                 trackList.Sort();
             }
-
-            MapReader.Dispose();
         }
 
         private void OverlayRadioButton_CheckedChanged(object sender, EventArgs e)

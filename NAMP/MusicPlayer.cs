@@ -21,8 +21,6 @@ namespace NAMP
         readonly float fadeSpeed = 0.0075f;
         readonly int fadeInterval = 16;
 
-        string mapLocation = @"mapping.txt";
-
         string currentSong = "";
 
         public MusicPlayer(string songDirectory = "")
@@ -72,9 +70,9 @@ namespace NAMP
 
         public void InitTracks(string songName)
         {
-            if (SongDirectory != string.Empty)
+            if (!string.IsNullOrWhiteSpace(SongDirectory))
             {
-                MapReader = new FileMapReader(mapLocation);
+                MapReader = new FileMapReader(SongDirectory + "\\mapping.txt");
 
                 bool isMSPInit = false;
                 string[] tracks = MapReader.GetAvailableTracks(songName);
@@ -94,7 +92,7 @@ namespace NAMP
                     readers.Add(new CustomVorbisWaveReader(musicDirectory + trackFile));
 
                     loopSampleProviders.Add(new LoopSampleProvider(readers.Last(), loopStart, loopEnd) { Loop = Loop });
-                    volumeSampleProviders.Add(new KeyValuePair<string, VolumeSampleProvider>(track, new VolumeSampleProvider(loopSampleProviders.Last())));
+                    volumeSampleProviders.Add(new KeyValuePair<string, VolumeSampleProvider>(track, new VolumeSampleProvider(loopSampleProviders.Last()) { Volume = 0.0f }));
 
                     Console.WriteLine($"Added track \"{track}\" for song \"{songName}\".");
 
@@ -119,26 +117,27 @@ namespace NAMP
             {
                 if (item.Key.StartsWith("ins"))
                 {
-                    if (item.Key == mainTrackName)
+                    if (!string.IsNullOrWhiteSpace(mainTrackName))
                     {
-                        if (item.Value.Volume < 1.0f)
-                            item.Value.Volume = 1.0f;
+                        if (item.Key == mainTrackName)
+                        {
+                            if (item.Value.Volume < 1.0f)
+                                item.Value.Volume = 1.0f;
+                        }
+                        else item.Value.Volume = 0.0f;
                     }
-                    else
-                        item.Value.Volume = 0.0f;
                 }
 
-                if (string.IsNullOrWhiteSpace(overlayTrackName) && item.Key.StartsWith("voc"))
+                if (item.Key.StartsWith("voc"))
                 {
-                    if (item.Key.StartsWith("voc"))
+                    if (!string.IsNullOrWhiteSpace(overlayTrackName))
                     {
                         if (item.Key == overlayTrackName)
                         {
                             if (item.Value.Volume < 1.0f)
                                 item.Value.Volume = 1.0f;
                         }
-                        else
-                            item.Value.Volume = 0.0f;
+                        else item.Value.Volume = 0.0f;
                     }
                 }
             }

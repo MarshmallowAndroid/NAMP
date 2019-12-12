@@ -149,6 +149,6 @@
     </PreBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
-    <PostBuildEvent>copy $(SolutionDir)mapping.txt $(ProjectDir)$(OutDir)</PostBuildEvent>
+    <PostBuildEvent>copy $(SolutionDir)mapping.txt "F:\NieRAutomata Modding\all"</PostBuildEvent>
   </PropertyGroup>
 </Project>
