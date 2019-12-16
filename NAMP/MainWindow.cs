@@ -22,9 +22,9 @@ namespace NAMP
 
         float sfxVolume = 2.0f;
 
-        string mapLocation = @"mapping.txt";
-
         MusicPlayer Player;
+
+        string selectedSong = "";
 
         public MainWindow()
         {
@@ -36,13 +36,13 @@ namespace NAMP
 
             SfxPlayer.Volume = sfxVolume;
 
-            playButton.MouseEnter += MouseEnterSound;
+            //playButton.MouseEnter += MouseEnterSound;
 
-            loopCheckBox.MouseEnter += MouseEnterSound;
-            loopCheckBox.MouseDown += MouseDownSound2;
+            //loopCheckBox.MouseEnter += MouseEnterSound;
+            //loopCheckBox.MouseDown += MouseDownSound2;
 
-            pauseButton.MouseEnter += MouseEnterSound;
-            pauseButton.MouseDown += MouseDownSound;
+            //pauseButton.MouseEnter += MouseEnterSound;
+            //pauseButton.MouseDown += MouseDownSound;
         }
 
         private void MouseEnterSound(object sender, EventArgs e)
@@ -80,6 +80,9 @@ namespace NAMP
             long position = Player.PlaybackPosition;
             long length = Player.PlaybackLength;
 
+            //Console.WriteLine(position);
+            //Console.WriteLine(length);
+
             if (length > 0)
                 playPosition.Value = (int)((double)playPosition.Maximum * ((double)position / (double)length));
 
@@ -114,6 +117,8 @@ namespace NAMP
             RadioButton mainTrack = null;
             RadioButton overlayTrack = null;
 
+            Player.InitTracks(selectedSong);
+
             foreach (RadioButton item in mainTracksPanel.Controls)
             {
                 if (item.Checked) mainTrack = item;
@@ -126,13 +131,17 @@ namespace NAMP
 
             if (mainTrack != null)
             {
-                MouseDownSound(sender, e);
                 Player.Play(mainTrack.Name, overlayTrack?.Name);
             }
             else
             {
                 MouseDownSoundInvalid(sender, e);
             }
+        }
+
+        private void stopButton_Click(object sender, EventArgs e)
+        {
+            Player.Stop();
         }
 
         private void PauseButton_Click(object sender, EventArgs e)
@@ -173,12 +182,10 @@ namespace NAMP
 
         private void SongList_SelectedIndexChanged(object sender, EventArgs e)
         {
-            string selectedSong = songList.SelectedItem?.ToString();
+            selectedSong = songList.SelectedItem?.ToString();
 
-            if (selectedSong != null)
+            if (!string.IsNullOrWhiteSpace(selectedSong))
             {
-                Player.Stop();
-
                 MapReader = new FileMapReader(musicPath.Text + "\\mapping.txt");
 
                 bool offRadioButtonAdded = false;
@@ -266,8 +273,6 @@ namespace NAMP
                 }
 
                 MapReader.Dispose();
-
-                Player.InitTracks(selectedSong);
 
                 //((RadioButton)mainTracksPanel.Controls[0]).Checked = true;
 

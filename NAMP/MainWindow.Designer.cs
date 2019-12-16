@@ -43,6 +43,7 @@
             this.mainFadeProgress = new System.Windows.Forms.ProgressBar();
             this.loopCheckBox = new System.Windows.Forms.CheckBox();
             this.overlayFadeProgress = new System.Windows.Forms.ProgressBar();
+            this.stopButton = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.playPosition)).BeginInit();
             this.SuspendLayout();
             // 
@@ -156,7 +157,7 @@
             this.loopCheckBox.Checked = true;
             this.loopCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
             this.loopCheckBox.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.loopCheckBox.Location = new System.Drawing.Point(526, 199);
+            this.loopCheckBox.Location = new System.Drawing.Point(526, 307);
             this.loopCheckBox.Name = "loopCheckBox";
             this.loopCheckBox.Size = new System.Drawing.Size(64, 24);
             this.loopCheckBox.TabIndex = 10;
@@ -172,6 +173,17 @@
             this.overlayFadeProgress.TabIndex = 11;
             this.overlayFadeProgress.Visible = false;
             // 
+            // stopButton
+            // 
+            this.stopButton.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.stopButton.Location = new System.Drawing.Point(526, 199);
+            this.stopButton.Name = "stopButton";
+            this.stopButton.Size = new System.Drawing.Size(113, 102);
+            this.stopButton.TabIndex = 5;
+            this.stopButton.Text = "Stop";
+            this.stopButton.UseVisualStyleBackColor = true;
+            this.stopButton.Click += new System.EventHandler(this.stopButton_Click);
+            // 
             // MainWindow
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -184,6 +196,7 @@
             this.Controls.Add(this.mainTracksPanel);
             this.Controls.Add(this.trackList);
             this.Controls.Add(this.songList);
+            this.Controls.Add(this.stopButton);
             this.Controls.Add(this.playButton);
             this.Controls.Add(this.pauseButton);
             this.Controls.Add(this.playPosition);
@@ -217,6 +230,7 @@
         private System.Windows.Forms.ProgressBar mainFadeProgress;
         private System.Windows.Forms.CheckBox loopCheckBox;
         private System.Windows.Forms.ProgressBar overlayFadeProgress;
+        private System.Windows.Forms.Button stopButton;
     }
 }
 

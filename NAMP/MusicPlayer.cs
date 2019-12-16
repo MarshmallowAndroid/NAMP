@@ -11,10 +11,10 @@ namespace NAMP
     {
         private WaveOut outputDevice;
 
-        private List<CustomVorbisWaveReader> readers;
+        private List<WaveStream> waveStreams;
         private List<LoopSampleProvider> loopSampleProviders;
         private List<KeyValuePair<string, VolumeSampleProvider>> volumeSampleProviders;
-        private MixingSampleProvider MixingSampleProvider;
+        private MixingSampleProvider mixingSampleProvider;
 
         private FileMapReader MapReader;
 
@@ -26,6 +26,11 @@ namespace NAMP
         public MusicPlayer(string songDirectory = "")
         {
             outputDevice = new WaveOut() { DesiredLatency = 100 };
+
+            outputDevice.PlaybackStopped += (s, e) =>
+            {
+                Flush();
+            };
 
             SongDirectory = songDirectory;
         }
@@ -50,7 +55,7 @@ namespace NAMP
         {
             get
             {
-                if (readers?.Count > 0) return readers[0].Length;
+                if (waveStreams?.Count > 0) return waveStreams.First().Length;
                 else return 0;
             }
         }
@@ -59,7 +64,7 @@ namespace NAMP
         {
             get
             {
-                if (readers?.Count > 0) return readers[0].Position;
+                if (waveStreams?.Count > 0) return waveStreams.First().Position;
                 else return 0;
             }
         }
@@ -79,7 +84,7 @@ namespace NAMP
 
                 string musicDirectory = SongDirectory + "\\";
 
-                readers = new List<CustomVorbisWaveReader>();
+                waveStreams = new List<WaveStream>();
                 loopSampleProviders = new List<LoopSampleProvider>();
                 volumeSampleProviders = new List<KeyValuePair<string, VolumeSampleProvider>>();
 
@@ -89,20 +94,26 @@ namespace NAMP
                     int loopStart = int.Parse(MapReader.GetValue(songName, "loop_start"));
                     int loopEnd = int.Parse(MapReader.GetValue(songName, "loop_end"));
 
-                    readers.Add(new CustomVorbisWaveReader(musicDirectory + trackFile));
+                    int startSample = 0;
+                    int.TryParse(MapReader.GetValue(songName, "dly_" + track), out startSample);
 
-                    loopSampleProviders.Add(new LoopSampleProvider(readers.Last(), loopStart, loopEnd) { Loop = Loop });
+                    var reader = new CustomVorbisWaveReader(musicDirectory + trackFile);
+                    waveStreams.Add(new CustomWaveOffsetStream(reader, startSample, 0, reader.Length));
+                    loopSampleProviders.Add(new LoopSampleProvider(waveStreams.Last(), loopStart, loopEnd, startSample) { Loop = Loop });
                     volumeSampleProviders.Add(new KeyValuePair<string, VolumeSampleProvider>(track, new VolumeSampleProvider(loopSampleProviders.Last()) { Volume = 0.0f }));
 
                     Console.WriteLine($"Added track \"{track}\" for song \"{songName}\".");
+                    Console.WriteLine();
+                    Console.WriteLine($"Start offset is {startSample}.");
+                    Console.WriteLine();
 
                     if (!isMSPInit)
                     {
-                        MixingSampleProvider = new MixingSampleProvider(readers.First().WaveFormat);
+                        mixingSampleProvider = new MixingSampleProvider(waveStreams.First().WaveFormat);
                         isMSPInit = true;
                     }
 
-                    MixingSampleProvider.AddMixerInput(volumeSampleProviders.Last().Value);
+                    mixingSampleProvider.AddMixerInput(volumeSampleProviders.Last().Value);
                 }
 
                 currentSong = songName;
@@ -113,31 +124,34 @@ namespace NAMP
 
         public void InitVolumes(string mainTrackName, string overlayTrackName = "")
         {
-            foreach (var item in volumeSampleProviders)
+            if (volumeSampleProviders?.Count > 0)
             {
-                if (item.Key.StartsWith("ins"))
+                foreach (var item in volumeSampleProviders)
                 {
-                    if (!string.IsNullOrWhiteSpace(mainTrackName))
+                    if (item.Key.StartsWith("ins"))
                     {
-                        if (item.Key == mainTrackName)
+                        if (!string.IsNullOrWhiteSpace(mainTrackName))
                         {
-                            if (item.Value.Volume < 1.0f)
-                                item.Value.Volume = 1.0f;
+                            if (item.Key == mainTrackName)
+                            {
+                                if (item.Value.Volume < 1.0f)
+                                    item.Value.Volume = 1.0f;
+                            }
+                            else item.Value.Volume = 0.0f;
                         }
-                        else item.Value.Volume = 0.0f;
                     }
-                }
 
-                if (item.Key.StartsWith("voc"))
-                {
-                    if (!string.IsNullOrWhiteSpace(overlayTrackName))
+                    if (item.Key.StartsWith("voc"))
                     {
-                        if (item.Key == overlayTrackName)
+                        if (!string.IsNullOrWhiteSpace(overlayTrackName))
                         {
-                            if (item.Value.Volume < 1.0f)
-                                item.Value.Volume = 1.0f;
+                            if (item.Key == overlayTrackName)
+                            {
+                                if (item.Value.Volume < 1.0f)
+                                    item.Value.Volume = 1.0f;
+                            }
+                            else item.Value.Volume = 0.0f;
                         }
-                        else item.Value.Volume = 0.0f;
                     }
                 }
             }
@@ -148,16 +162,15 @@ namespace NAMP
             if (outputDevice.PlaybackState != PlaybackState.Stopped)
             {
                 outputDevice.Stop();
-                outputDevice.Dispose();
 
                 InitTracks(currentSong);
             }
 
             InitVolumes(mainTrackName, overlayTrackName);
 
-            if (MixingSampleProvider != null)
+            if (mixingSampleProvider != null)
             {
-                outputDevice.Init(MixingSampleProvider);
+                outputDevice.Init(mixingSampleProvider);
                 outputDevice.Play();
             }
         }
@@ -287,7 +300,17 @@ namespace NAMP
 
         public void Flush()
         {
-            // if ()
+            Console.WriteLine("Flushing resources...");
+
+            waveStreams?.ForEach(x =>
+            {
+                x.Dispose();
+            });
+
+            waveStreams?.Clear();
+            loopSampleProviders?.Clear();
+            volumeSampleProviders?.Clear();
+            mixingSampleProvider?.RemoveAllMixerInputs();
         }
 
         public void SetLoop(bool value)
@@ -313,7 +336,7 @@ namespace NAMP
 
                     foreach (var lsp in loopSampleProviders)
                     {
-                        lsp.Seek(position - (position % lsp.WaveFormat.Channels));
+                        lsp.Seek(position);
                     }
                 }
                 catch (Exception)

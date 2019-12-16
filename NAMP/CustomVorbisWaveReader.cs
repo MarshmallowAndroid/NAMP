@@ -58,7 +58,7 @@ namespace NAMP
             }
             set
             {
-                if (value < 0 || value > Length) throw new ArgumentOutOfRangeException("value");
+                if (value < 0 || value > (Length)) throw new ArgumentOutOfRangeException("value");
 
                 _reader.DecodedPosition = value;
             }

@@ -52,21 +52,26 @@ namespace NAMP
 
             while (!reader.EndOfStream)
             {
-                if (reader.ReadLine() == $"[{songName}]")
+                string readLine = reader.ReadLine();
+
+                if (!readLine.Trim().StartsWith("#"))
                 {
-                    while (!reader.EndOfStream)
+                    if (readLine == $"[{songName}]")
                     {
-                        string line = reader.ReadLine();
-
-                        if (line.Length > 0)
+                        while (!reader.EndOfStream)
                         {
-                            if (line.StartsWith("[") || !char.IsLetterOrDigit(line[0])) break;
-                            if (key == line.Substring(0, line.IndexOf('=')).Trim())
-                            {
-                                return line.Substring(line.IndexOf('=') + 1, line.Length - (line.IndexOf('=') + 1)).Trim();
-                            }
-                        }
+                            string line = reader.ReadLine();
 
+                            if (line.Length > 0)
+                            {
+                                if (line.StartsWith("[") || !char.IsLetterOrDigit(line[0])) break;
+                                if (key == line.Substring(0, line.IndexOf('=')).Trim())
+                                {
+                                    return line.Substring(line.IndexOf('=') + 1, line.Length - (line.IndexOf('=') + 1)).Trim();
+                                }
+                            }
+
+                        }
                     }
                 }
             }
@@ -82,19 +87,24 @@ namespace NAMP
 
             while (!reader.EndOfStream)
             {
-                if (reader.ReadLine() == $"[{songName}]")
-                {
-                    while (!reader.EndOfStream)
-                    {
-                        string line = reader.ReadLine();
+                string readLine = reader.ReadLine();
 
-                        if (line.Length > 0)
+                if (!readLine.Trim().StartsWith("#"))
+                {
+                    if (readLine == $"[{songName}]")
+                    {
+                        while (!reader.EndOfStream)
                         {
-                            if (line.StartsWith("[") || !char.IsLetterOrDigit(line[0])) break;
-                            if (!line.StartsWith("loop"))
+                            string line = reader.ReadLine();
+
+                            if (line.Length > 0)
                             {
-                                string key = line.Substring(0, line.IndexOf('=')).Trim();
-                                trackList.Add(key);
+                                if (line.StartsWith("[") || !char.IsLetterOrDigit(line[0])) break;
+                                if (!line.StartsWith("loop") && !line.StartsWith("dly"))
+                                {
+                                    string key = line.Substring(0, line.IndexOf('=')).Trim();
+                                    trackList.Add(key);
+                                }
                             }
                         }
                     }
@@ -112,14 +122,18 @@ namespace NAMP
 
             while (!reader.EndOfStream)
             {
-                string line = reader.ReadLine();
+                string readLine = reader.ReadLine();
 
-                if (line.StartsWith("[") && line.EndsWith("]"))
+                if (!readLine.Trim().StartsWith("#"))
                 {
-                    string songName = line.Substring(line.IndexOf("[") + 1, line.LastIndexOf("]") - 1);
+                    if (readLine.StartsWith("[") && readLine.EndsWith("]"))
+                    {
+                        string songName = readLine.Substring(readLine.IndexOf("[") + 1, readLine.LastIndexOf("]") - 1);
 
-                    songList.Add(songName);
+                        songList.Add(songName);
+                    }
                 }
+
             }
 
             return songList.ToArray();
