@@ -54,7 +54,6 @@ namespace NAMP
 
             SourceStream.Position = position;
 
-            Console.WriteLine(SourceStream.Position);
 
             if (position > start && position < end)
                 providers.Enqueue(new OffsetSampleProvider(SourceStream.ToSampleProvider())
@@ -100,7 +99,7 @@ namespace NAMP
                     if (Loop)
                     {
                         if (SourceStream.Position > start)
-                            SourceStream.Position = 0;
+                            SourceStream.Position = start;
 
                         providers.Enqueue(new OffsetSampleProvider(SourceStream.ToSampleProvider())
                         {

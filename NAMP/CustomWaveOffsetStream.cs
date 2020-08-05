@@ -9,7 +9,7 @@ namespace NAMP
 {
     class CustomWaveOffsetStream : WaveStream
     {
-        private WaveStream sourceStream;
+        private CustomVorbisWaveReader sourceStream;
         private long audioStartPosition;
         private long sourceOffsetBytes;
         private long sourceLengthBytes;
@@ -28,7 +28,7 @@ namespace NAMP
         /// <param name="startSample">the time at which we should start reading from the source stream</param>
         /// <param name="sourceOffset">amount to trim off the front of the source stream</param>
         /// <param name="sourceLength">length of time to play from source stream</param>
-        public CustomWaveOffsetStream(WaveStream sourceStream, int startSample, int sourceOffset, long sourceLength)
+        public CustomWaveOffsetStream(CustomVorbisWaveReader sourceStream, int startSample, int sourceOffset, long sourceLength)
         {
             //if (sourceStream.WaveFormat.Encoding != WaveFormatEncoding.Pcm)
             //    throw new ArgumentException("Only PCM supported");
@@ -53,7 +53,7 @@ namespace NAMP
         /// and whole length of source stream)
         /// </summary>
         /// <param name="sourceStream">The source stream</param>
-        public CustomWaveOffsetStream(WaveStream sourceStream)
+        public CustomWaveOffsetStream(CustomVorbisWaveReader sourceStream)
             : this(sourceStream, 0, 0, sourceStream.Length)
         {
         }
@@ -147,7 +147,7 @@ namespace NAMP
         {
             get
             {
-                return position / bytesPerSample;
+                return position / bytesPerSample;  
             }
             set
             {
@@ -155,10 +155,11 @@ namespace NAMP
                 {
                     // make sure we don't get out of sync
                     //value -= (value % BlockAlign);
-                    //if (value < audioStartPosition)
-                    //    sourceStream.Position = sourceOffsetBytes;
-                    //else
-                    //    sourceStream.Position = sourceOffsetBytes + (value - audioStartPosition);
+                    if (value < audioStartPosition)
+                        sourceStream.Position = sourceOffsetBytes;
+                    else
+                        sourceStream.Position = sourceOffsetBytes + (value + audioStartPosition);
+
                     position = value * bytesPerSample;
                 }
             }
@@ -188,7 +189,7 @@ namespace NAMP
                     // don't read too far into source stream
                     int sourceBytesRequired = (int)Math.Min(
                         numBytes - bytesWritten,
-                        sourceLengthBytes + sourceOffsetBytes - sourceStream.Position);
+                        sourceLengthBytes + sourceOffsetBytes - (sourceStream.Position * bytesPerSample));
                     int read = sourceStream.Read(destBuffer, bytesWritten + offset, sourceBytesRequired);
                     bytesWritten += read;
                 }

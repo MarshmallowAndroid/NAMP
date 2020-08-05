@@ -13,7 +13,7 @@ namespace NAMP
 
         private List<WaveStream> waveStreams;
         private List<LoopSampleProvider> loopSampleProviders;
-        private List<KeyValuePair<string, VolumeSampleProvider>> volumeSampleProviders;
+        private Dictionary<string, VolumeSampleProvider> volumeSampleProviders;
         private MixingSampleProvider mixingSampleProvider;
 
         private FileMapReader MapReader;
@@ -86,7 +86,7 @@ namespace NAMP
 
                 waveStreams = new List<WaveStream>();
                 loopSampleProviders = new List<LoopSampleProvider>();
-                volumeSampleProviders = new List<KeyValuePair<string, VolumeSampleProvider>>();
+                volumeSampleProviders = new Dictionary<string, VolumeSampleProvider>();
 
                 foreach (var track in tracks)
                 {
@@ -94,13 +94,12 @@ namespace NAMP
                     int loopStart = int.Parse(MapReader.GetValue(songName, "loop_start"));
                     int loopEnd = int.Parse(MapReader.GetValue(songName, "loop_end"));
 
-                    int startSample = 0;
-                    int.TryParse(MapReader.GetValue(songName, "dly_" + track), out startSample);
+                    int.TryParse(MapReader.GetValue(songName, "dly_" + track), out int startSample);
 
                     var reader = new CustomVorbisWaveReader(musicDirectory + trackFile);
-                    waveStreams.Add(new CustomWaveOffsetStream(reader, startSample, 0, reader.Length));
+                    waveStreams.Add(reader);
                     loopSampleProviders.Add(new LoopSampleProvider(waveStreams.Last(), loopStart, loopEnd, startSample) { Loop = Loop });
-                    volumeSampleProviders.Add(new KeyValuePair<string, VolumeSampleProvider>(track, new VolumeSampleProvider(loopSampleProviders.Last()) { Volume = 0.0f }));
+                    volumeSampleProviders.Add(track, new VolumeSampleProvider(loopSampleProviders.Last()) { Volume = 0.0f });
 
                     Console.WriteLine($"Added track \"{track}\" for song \"{songName}\".");
                     Console.WriteLine();
