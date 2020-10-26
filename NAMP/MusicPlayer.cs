@@ -11,7 +11,6 @@ namespace NAMP
     {
         private WaveOut outputDevice;
 
-        private List<WaveStream> waveStreams;
         private List<LoopSampleProvider> loopSampleProviders;
         private Dictionary<string, VolumeSampleProvider> volumeSampleProviders;
         private MixingSampleProvider mixingSampleProvider;
@@ -55,7 +54,7 @@ namespace NAMP
         {
             get
             {
-                if (waveStreams?.Count > 0) return waveStreams.First().Length;
+                if (loopSampleProviders?.Count > 0) return loopSampleProviders.First().Length;
                 else return 0;
             }
         }
@@ -64,7 +63,7 @@ namespace NAMP
         {
             get
             {
-                if (waveStreams?.Count > 0) return waveStreams.First().Position;
+                if (loopSampleProviders?.Count > 0) return loopSampleProviders.First().Position;
                 else return 0;
             }
         }
@@ -84,7 +83,6 @@ namespace NAMP
 
                 string musicDirectory = SongDirectory + "\\";
 
-                waveStreams = new List<WaveStream>();
                 loopSampleProviders = new List<LoopSampleProvider>();
                 volumeSampleProviders = new Dictionary<string, VolumeSampleProvider>();
 
@@ -97,8 +95,7 @@ namespace NAMP
                     int.TryParse(MapReader.GetValue(songName, "dly_" + track), out int startSample);
 
                     var reader = new CustomVorbisWaveReader(musicDirectory + trackFile);
-                    waveStreams.Add(reader);
-                    loopSampleProviders.Add(new LoopSampleProvider(waveStreams.Last(), loopStart, loopEnd, startSample) { Loop = Loop });
+                    loopSampleProviders.Add(new LoopSampleProvider(reader, loopStart, loopEnd, startSample) { Loop = Loop });
                     volumeSampleProviders.Add(track, new VolumeSampleProvider(loopSampleProviders.Last()) { Volume = 0.0f });
 
                     Console.WriteLine($"Added track \"{track}\" for song \"{songName}\".");
@@ -108,7 +105,7 @@ namespace NAMP
 
                     if (!isMSPInit)
                     {
-                        mixingSampleProvider = new MixingSampleProvider(waveStreams.First().WaveFormat);
+                        mixingSampleProvider = new MixingSampleProvider(loopSampleProviders.First().WaveFormat);
                         isMSPInit = true;
                     }
 
@@ -301,12 +298,11 @@ namespace NAMP
         {
             Console.WriteLine("Flushing resources...");
 
-            waveStreams?.ForEach(x =>
+            loopSampleProviders?.ForEach(x =>
             {
-                x.Dispose();
+                x.SourceStream.Dispose();
             });
 
-            waveStreams?.Clear();
             loopSampleProviders?.Clear();
             volumeSampleProviders?.Clear();
             mixingSampleProvider?.RemoveAllMixerInputs();

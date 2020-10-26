@@ -18,6 +18,7 @@ namespace NAMP
         private int start;
         private int end;
         private int startSample;
+        private int loopLength;
 
         public LoopSampleProvider(WaveStream sourceStream, int start, int end, int startSample = 0)
         {
@@ -28,11 +29,7 @@ namespace NAMP
             this.start = start;
             this.end = end;
             this.startSample = startSample;
-
-#if SHOW_DEBUG_MESSAGES
-            Console.WriteLine("Start    : " + (start * 2));
-            Console.WriteLine("End      : " + (end * 2));
-#endif
+            this.loopLength = (end - start) * 2;
 
             providers.Enqueue(new OffsetSampleProvider(SourceStream.ToSampleProvider())
             {
@@ -44,6 +41,10 @@ namespace NAMP
 
         public WaveStream SourceStream { get; private set; }
 
+        public long Length => SourceStream.Length;
+
+        public long Position => SourceStream.Position;
+
         public WaveFormat WaveFormat => SourceStream?.WaveFormat;
 
         public bool Loop { get; set; }
@@ -53,7 +54,6 @@ namespace NAMP
             providers.Clear();
 
             SourceStream.Position = position;
-
 
             if (position > start && position < end)
                 providers.Enqueue(new OffsetSampleProvider(SourceStream.ToSampleProvider())
@@ -71,30 +71,20 @@ namespace NAMP
             currentProvider = providers.Dequeue();
         }
 
-        private int GetChannelMultiple(int value)
-        {
-            return value;
-        }
-
         public int Read(float[] buffer, int offset, int count)
         {
             int read = 0;
 
-            while (read < count && SourceStream.Position < SourceStream.Length)
+            while (read < count)
             {
-                int needed = count - read;
-                int readThisTime = currentProvider.Read(buffer, read, needed);
-
-                read += readThisTime;
+                int readThisTime = currentProvider.Read(buffer, offset + read, count - read);
 
                 if (readThisTime == 0)
                 {
-#if SHOW_DEBUG_MESSAGES
                     Console.WriteLine("Ended at     :" + SourceStream.Position * 2);
                     Console.WriteLine("Loop start   :" + start * 2);
                     Console.WriteLine("Loop end     :" + end * 2);
                     Console.WriteLine();
-#endif
 
                     if (Loop)
                     {
@@ -103,7 +93,7 @@ namespace NAMP
 
                         providers.Enqueue(new OffsetSampleProvider(SourceStream.ToSampleProvider())
                         {
-                            TakeSamples = GetChannelMultiple((end - start) * 2)
+                            TakeSamples = loopLength
                         });
 
                         currentProvider = providers.Dequeue();
@@ -115,6 +105,8 @@ namespace NAMP
                         currentProvider = providers.Dequeue();
                     }
                 }
+
+                read += readThisTime;
             }
 
             return read;
